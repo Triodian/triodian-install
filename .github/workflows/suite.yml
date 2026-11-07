@@ -8,6 +8,10 @@ on:
   workflow_dispatch:
     inputs:
       ref: { description: 'Branch to test in every app repo (falls back to main where it does not exist)', default: 'main' }
+# The workflow only reads the code: the token GitHub gives it cannot push, merge or change settings.
+permissions:
+  contents: read
+
 jobs:
   suite:
     runs-on: ubuntu-latest
