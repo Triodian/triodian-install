@@ -1,0 +1,30 @@
+# Suite test (development plan task 1B.7): runs the four engagement apps together, sharing one local identity
+# database, on every push here and once a day, using the main branch of each app. No secrets.
+name: Suite test
+on:
+  push:
+  pull_request:
+  schedule: [{ cron: '30 19 * * *' }]
+  workflow_dispatch:
+    inputs:
+      ref: { description: 'Branch to test in every app repo (falls back to main where it does not exist)', default: 'main' }
+jobs:
+  suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: triodian-install }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Fetch the apps
+        run: |
+          REF="${{ github.event.inputs.ref || 'main' }}"
+          for r in risk_appetite use-assessment Confidentiality-Exposure-Assessment board-direction; do
+            d=$(echo "$r" | tr 'A-Z' 'a-z')
+            git clone --depth 1 --branch "$REF" "https://github.com/Triodian/$r.git" "$d" 2>/dev/null || git clone --depth 1 "https://github.com/Triodian/$r.git" "$d"
+            (cd "$d/tests/e2e" && npm ci --no-audit --no-fund)
+          done
+      - name: Check the installer's configurations
+        run: cd triodian-install && node test-install.mjs
+      - name: Run the apps together
+        run: cd triodian-install && node suite/run.mjs ..
