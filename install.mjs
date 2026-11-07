@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Guided installer for the Triodian AI governance apps (development plan task 1B.6).
-// Asks the jurisdiction and regulated domain, which apps (general or regulated), and the web domain; then, in the Cloudflare account the API token belongs to:
+// Asks the jurisdiction and regulated sector, which apps (general or regulated), and the web domain; then, in the Cloudflare account the API token belongs to:
 // fetches the apps, creates their databases and the shared identity database, writes each app's client configuration,
 // sets up email sign-in with Cloudflare Access, deploys in order, and names the first administrator.
 // The apps share one sign-in and talk to each other through service bindings, so no secret is typed.
@@ -15,7 +15,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
-import { APPS, appsFor, readConfig, JURISDICTIONS, DOMAINS } from './lib-config.mjs';
+import { APPS, appsFor, readConfig, JURISDICTIONS, SECTORS } from './lib-config.mjs';
 
 const args = process.argv.slice(2), DRY = args.includes('--dry-run');
 const answersFile = args.includes('--answers') ? args[args.indexOf('--answers') + 1] : null;
@@ -30,11 +30,11 @@ async function ask() {
   const a = {};
   a.code = await q('Short code for this client (letters and digits, used in Worker and database names)', '', v => /^[a-z][a-z0-9]{1,19}$/.test(v) ? '' : 'Use 2 to 20 lowercase letters and digits, starting with a letter.');
   a.jurisdiction = (await q(`Jurisdiction the client works in (${JURISDICTIONS.map(j => `${j[0]} ${j[1]}`).join(', ')})`, 'AU', v => JURISDICTIONS.some(j => j[0] === v.toUpperCase()) ? '' : `Type ${JURISDICTIONS.map(j => j[0]).join(' or ')}.`)).toUpperCase();
-  const doms = DOMAINS.filter(d => d.jurisdiction === a.jurisdiction);
-  say('  Regulated domains:\n' + ['   0  None (choose in each app later)', ...doms.map((d, i) => `  ${String(i + 1).padStart(2)}  ${d.name}`)].join('\n'));
-  const n = await q('Regulated domain (number)', '0', v => /^\d+$/.test(v) && +v <= doms.length ? '' : `Type a number from 0 to ${doms.length}.`);
-  a.regulatedDomain = +n ? doms[+n - 1].id : '';
-  const regulated = +n && doms[+n - 1].financiallyRegulated;
+  const secs = SECTORS.filter(d => d.jurisdiction === a.jurisdiction);
+  say('  Regulated sectors:\n' + ['   0  None (choose in each app later)', ...secs.map((d, i) => `  ${String(i + 1).padStart(2)}  ${d.name}`)].join('\n'));
+  const n = await q('Regulated sector (number)', '0', v => /^\d+$/.test(v) && +v <= secs.length ? '' : `Type a number from 0 to ${secs.length}.`);
+  a.sector = +n ? secs[+n - 1].id : '';
+  const regulated = +n && secs[+n - 1].financiallyRegulated;
   a.profile = await q('General company or regulated entity? (general / regulated)', regulated ? 'regulated' : 'general', v => ['general', 'regulated'].includes(v) ? '' : 'Type general or regulated.');
   a.domain = await q('Domain the apps sit under (each app gets a subdomain, for example board-direction.<domain>)', '', v => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(v) ? '' : 'Type a domain such as acme.com.au, on a zone in this Cloudflare account.');
   a.teamDomain = await q('Cloudflare Zero Trust team domain (Zero Trust → Settings → Custom pages)', '', v => /\.cloudflareaccess\.com$/.test(v) ? '' : 'It ends in .cloudflareaccess.com.');
@@ -78,7 +78,7 @@ export function clientConfig(app, a, ids) {
   c.vars = { ...(env.vars || {}), SUITE_DEMO: 'off', DEMO_LOGIN: '', DEMO_ADMINS: '', SITE_URL: `https://${host}`, SUITE_COOKIE_DOMAIN: a.domain, SUITE_SESSION_COOKIE: 'tri_suite',
     ACCESS_TEAM_DOMAIN: a.teamDomain, FIRST_ADMINS: a.firstAdmins.join(','), NOTIFY_SENDING: 'off', NOTIFY_FROM: '',
     // Where each app starts; people change both in the app at any time.
-    DEFAULT_JURISDICTION: a.jurisdiction || 'AU', DEFAULT_DOMAIN: a.regulatedDomain || '' };
+    DEFAULT_JURISDICTION: a.jurisdiction || 'AU', DEFAULT_SECTOR: a.sector || '' };
   if (env.triggers || base.triggers) c.triggers = env.triggers || base.triggers;
   return { config: c, host, file: join(dir, `wrangler.${a.code}.json`) };
 }
@@ -88,9 +88,9 @@ async function main() {
   a.dir = resolve(a.dir);
   const apps = appsFor(a.profile);
   if (!DRY && (!process.env.CLOUDFLARE_API_TOKEN || !process.env.CLOUDFLARE_ACCOUNT_ID)) throw new Error('Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID first (see the top of this file for the permissions).');
-  if (a.regulatedDomain && !DOMAINS.some(d => d.id === a.regulatedDomain && d.jurisdiction === (a.jurisdiction || 'AU'))) throw new Error(`${a.regulatedDomain} is not a regulated domain of ${a.jurisdiction || 'AU'}.`);
-  const dom = DOMAINS.find(d => d.id === a.regulatedDomain);
-  say(`\nInstalling ${apps.map(x => x.name).join(', ')} for ${a.code}, under ${a.domain}, starting in ${(JURISDICTIONS.find(j => j[0] === (a.jurisdiction || 'AU')) || [])[1]}${dom ? `, ${dom.name}` : ''}.${DRY ? ' (dry run: nothing is changed in Cloudflare)' : ''}`);
+  if (a.sector && !SECTORS.some(d => d.id === a.sector && d.jurisdiction === (a.jurisdiction || 'AU'))) throw new Error(`${a.sector} is not a regulated sector of ${a.jurisdiction || 'AU'}.`);
+  const sec = SECTORS.find(d => d.id === a.sector);
+  say(`\nInstalling ${apps.map(x => x.name).join(', ')} for ${a.code}, under ${a.domain}, starting in ${(JURISDICTIONS.find(j => j[0] === (a.jurisdiction || 'AU')) || [])[1]}${sec ? `, ${sec.name}` : ''}.${DRY ? ' (dry run: nothing is changed in Cloudflare)' : ''}`);
 
   step('Fetching the apps');
   mkdirSync(a.dir, { recursive: true });

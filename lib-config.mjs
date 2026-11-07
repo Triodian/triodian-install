@@ -26,11 +26,11 @@ export function stripJsonc(text) {
 }
 export const readConfig = path => JSON.parse(stripJsonc(readFileSync(path, 'utf8')));
 
-/** Jurisdictions the apps cover, and their regulated domains (Triodian Metamodel 2.5.0, reference-data/regulated-domains.json).
-    test-install.mjs checks this list against AI Board Direction's copy. A deployment starts in the jurisdiction and domain chosen
-    here (DEFAULT_JURISDICTION, DEFAULT_DOMAIN); each app lets people change both later. */
+/** Jurisdictions the apps cover, and their regulated sectors (Triodian Metamodel 2.5.0, reference-data/regulated-sectors.json).
+    test-install.mjs checks this list against AI Board Direction's copy. A deployment starts in the jurisdiction and sector chosen
+    here (DEFAULT_JURISDICTION, DEFAULT_SECTOR); each app lets people change both later. */
 export const JURISDICTIONS = [['AU', 'Australia'], ['SG', 'Singapore']];
-export const DOMAINS = [
+export const SECTORS = [
   { id: 'AU-BANKING', jurisdiction: 'AU', name: 'Banking', financiallyRegulated: true },
   { id: 'AU-INSURANCE', jurisdiction: 'AU', name: 'Insurance', financiallyRegulated: true },
   { id: 'AU-SUPERANNUATION', jurisdiction: 'AU', name: 'Superannuation', financiallyRegulated: true },
