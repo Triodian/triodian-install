@@ -1,0 +1,7 @@
+Triodian installer and suite test
+Copyright 2026 Triodian Pty Ltd
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+It has no bundled third-party components. When it runs, it fetches the Triodian apps from GitHub and runs
+Wrangler (Cloudflare, Apache 2.0 or MIT) through npx; each app carries its own NOTICE.

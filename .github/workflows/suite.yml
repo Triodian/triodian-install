@@ -1,0 +1,45 @@
+# Suite test (development plan task 1B.7): runs the four engagement apps together, sharing one local identity
+# database, on every push here and once a day, using the main branch of each app. No secrets.
+name: Suite test
+on:
+  push:
+  pull_request:
+  schedule: [{ cron: '30 19 * * *' }]
+  workflow_dispatch:
+    inputs:
+      ref: { description: 'Branch to test in every app repo (falls back to main where it does not exist)', default: 'main' }
+# The workflow only reads the code: the token GitHub gives it cannot push, merge or change settings.
+permissions:
+  contents: read
+
+jobs:
+  suite:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: triodian-install }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Fetch the apps
+        env:
+          # The app repos are public, so no token is needed. SUITE_READ_TOKEN is used only if set, for a fork that tests
+          # private copies of the apps (a fine-grained token with read-only Contents access to them).
+          TOKEN: ${{ secrets.SUITE_READ_TOKEN }}
+        run: |
+          REF="${{ github.event.inputs.ref || 'main' }}"
+          AUTH=()
+          if [ -n "$TOKEN" ]; then AUTH=(-c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"); fi
+          for r in risk_appetite use-assessment Confidentiality-Exposure-Assessment board-direction; do
+            d=$(echo "$r" | tr 'A-Z' 'a-z')
+            if ! git "${AUTH[@]}" clone --quiet --depth 1 --branch "$REF" "https://github.com/Triodian/$r.git" "$d" 2>/dev/null; then
+              if ! GIT_TERMINAL_PROMPT=0 git "${AUTH[@]}" clone --quiet --depth 1 "https://github.com/Triodian/$r.git" "$d"; then
+                echo "::error::Could not fetch Triodian/$r. If the app repos are private, add a SUITE_READ_TOKEN secret with read-only Contents access to them."
+                exit 1
+              fi
+            fi
+            (cd "$d/tests/e2e" && npm ci --no-audit --no-fund)
+          done
+      - name: Check the installer's configurations
+        run: cd triodian-install && node test-install.mjs
+      - name: Run the apps together
+        run: cd triodian-install && node suite/run.mjs ..
