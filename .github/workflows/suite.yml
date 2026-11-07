@@ -18,8 +18,8 @@ jobs:
         with: { node-version: 22 }
       - name: Fetch the apps
         env:
-          # The app repos are private until they are opened. Until then this repo needs SUITE_READ_TOKEN: a fine-grained
-          # token with read-only Contents access to the four app repos. Once they are public, delete the secret.
+          # The app repos are public, so no token is needed. SUITE_READ_TOKEN is used only if set, for a fork that tests
+          # private copies of the apps (a fine-grained token with read-only Contents access to them).
           TOKEN: ${{ secrets.SUITE_READ_TOKEN }}
         run: |
           REF="${{ github.event.inputs.ref || 'main' }}"
@@ -29,7 +29,7 @@ jobs:
             d=$(echo "$r" | tr 'A-Z' 'a-z')
             if ! git "${AUTH[@]}" clone --quiet --depth 1 --branch "$REF" "https://github.com/Triodian/$r.git" "$d" 2>/dev/null; then
               if ! GIT_TERMINAL_PROMPT=0 git "${AUTH[@]}" clone --quiet --depth 1 "https://github.com/Triodian/$r.git" "$d"; then
-                echo "::error::Could not fetch Triodian/$r. The app repos are private: add the SUITE_READ_TOKEN secret to this repo (read-only Contents access to the four app repos), or make them public."
+                echo "::error::Could not fetch Triodian/$r. If the app repos are private, add a SUITE_READ_TOKEN secret with read-only Contents access to them."
                 exit 1
               fi
             fi

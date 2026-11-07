@@ -17,5 +17,6 @@ Only the latest `main` is supported. Deployments update from `main`.
 In scope: this repository's code and its default configuration. Out of scope: deployments run by others, denial of
 service by volume, and findings that need an already compromised Cloudflare account or administrator.
 
-Secrets are never kept in this repository. Configuration values in `wrangler.jsonc` (database ids, domains, the Access
-team domain) are not secrets.
+Secrets are never kept in this repository. The installer reads the Cloudflare API token from the environment and
+does not write it anywhere. The configurations it writes (`wrangler.<code>.json`) hold database ids, domains and the
+Access team domain, which are not secrets, and stay on the machine that ran it.

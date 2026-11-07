@@ -16,7 +16,8 @@ secret is created to link them.
 
 ## Installing for a client
 
-Needs Node 20 or later, git, and a Cloudflare API token with:
+Needs Node 20 or later, git, a Cloudflare account with Zero Trust set up (the free plan is enough), and a Cloudflare
+API token with:
 
 | Permission | Why |
 | --- | --- |
@@ -55,11 +56,8 @@ It starts the four apps with `wrangler dev`, sharing one local identity database
 app signs the person in to the others, that a person added in two apps is one record with roles per app, that Admin
 shows each person's roles in the other apps, that Use Assessment reaches Risk Appetite through the service binding, and
 that signing out of one app signs out of all. GitHub Actions runs it on every push here and once a day
-(`.github/workflows/suite.yml`). While the app repos are private, the workflow needs a `SUITE_READ_TOKEN` secret in this
-repo: a fine-grained token with read-only **Contents** access to the four app repos. Delete it once they are public.
-
-The installer fetches the apps anonymously, so it needs the app repos to be public, or git credentials on the machine
-that runs it.
+(`.github/workflows/suite.yml`), against `main` of each app; run it by hand with a branch name to test a change across
+the apps before it merges. It needs no secrets: the app repos are public.
 
 ## Contributing
 
