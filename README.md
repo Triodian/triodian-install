@@ -53,4 +53,8 @@ It starts the four apps with `wrangler dev`, sharing one local identity database
 app signs the person in to the others, that a person added in two apps is one record with roles per app, that Admin
 shows each person's roles in the other apps, that Use Assessment reaches Risk Appetite through the service binding, and
 that signing out of one app signs out of all. GitHub Actions runs it on every push here and once a day
-(`.github/workflows/suite.yml`).
+(`.github/workflows/suite.yml`). While the app repos are private, the workflow needs a `SUITE_READ_TOKEN` secret in this
+repo: a fine-grained token with read-only **Contents** access to the four app repos. Delete it once they are public.
+
+The installer fetches the apps anonymously, so it needs the app repos to be public, or git credentials on the machine
+that runs it.

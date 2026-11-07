@@ -17,11 +17,22 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
       - name: Fetch the apps
+        env:
+          # The app repos are private until they are opened. Until then this repo needs SUITE_READ_TOKEN: a fine-grained
+          # token with read-only Contents access to the four app repos. Once they are public, delete the secret.
+          TOKEN: ${{ secrets.SUITE_READ_TOKEN }}
         run: |
           REF="${{ github.event.inputs.ref || 'main' }}"
+          AUTH=()
+          if [ -n "$TOKEN" ]; then AUTH=(-c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"); fi
           for r in risk_appetite use-assessment Confidentiality-Exposure-Assessment board-direction; do
             d=$(echo "$r" | tr 'A-Z' 'a-z')
-            git clone --depth 1 --branch "$REF" "https://github.com/Triodian/$r.git" "$d" 2>/dev/null || git clone --depth 1 "https://github.com/Triodian/$r.git" "$d"
+            if ! git "${AUTH[@]}" clone --quiet --depth 1 --branch "$REF" "https://github.com/Triodian/$r.git" "$d" 2>/dev/null; then
+              if ! GIT_TERMINAL_PROMPT=0 git "${AUTH[@]}" clone --quiet --depth 1 "https://github.com/Triodian/$r.git" "$d"; then
+                echo "::error::Could not fetch Triodian/$r. The app repos are private: add the SUITE_READ_TOKEN secret to this repo (read-only Contents access to the four app repos), or make them public."
+                exit 1
+              fi
+            fi
             (cd "$d/tests/e2e" && npm ci --no-audit --no-fund)
           done
       - name: Check the installer's configurations
