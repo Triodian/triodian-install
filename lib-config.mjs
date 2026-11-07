@@ -25,3 +25,30 @@ export function stripJsonc(text) {
   return out.replace(/,(\s*[}\]])/g, '$1');
 }
 export const readConfig = path => JSON.parse(stripJsonc(readFileSync(path, 'utf8')));
+
+/** Jurisdictions the apps cover, and their regulated domains (Triodian Metamodel 2.5.0, reference-data/regulated-domains.json).
+    test-install.mjs checks this list against AI Board Direction's copy. A deployment starts in the jurisdiction and domain chosen
+    here (DEFAULT_JURISDICTION, DEFAULT_DOMAIN); each app lets people change both later. */
+export const JURISDICTIONS = [['AU', 'Australia'], ['SG', 'Singapore']];
+export const DOMAINS = [
+  { id: 'AU-BANKING', jurisdiction: 'AU', name: 'Banking', financiallyRegulated: true },
+  { id: 'AU-INSURANCE', jurisdiction: 'AU', name: 'Insurance', financiallyRegulated: true },
+  { id: 'AU-SUPERANNUATION', jurisdiction: 'AU', name: 'Superannuation', financiallyRegulated: true },
+  { id: 'AU-FINANCIAL-SERVICES', jurisdiction: 'AU', name: 'Financial services and markets', financiallyRegulated: true },
+  { id: 'AU-CREDIT', jurisdiction: 'AU', name: 'Credit', financiallyRegulated: true },
+  { id: 'AU-PAYMENTS', jurisdiction: 'AU', name: 'Payments', financiallyRegulated: true },
+  { id: 'AU-LISTED', jurisdiction: 'AU', name: 'Listed companies', financiallyRegulated: false },
+  { id: 'AU-HEALTH', jurisdiction: 'AU', name: 'Health', financiallyRegulated: false },
+  { id: 'AU-CRITICAL-INFRASTRUCTURE', jurisdiction: 'AU', name: 'Critical infrastructure', financiallyRegulated: false },
+  { id: 'AU-DEFENCE', jurisdiction: 'AU', name: 'Defence industry', financiallyRegulated: false },
+  { id: 'AU-GENERAL', jurisdiction: 'AU', name: 'Not financially regulated', financiallyRegulated: false },
+  { id: 'SG-BANKING', jurisdiction: 'SG', name: 'Banking', financiallyRegulated: true },
+  { id: 'SG-INSURANCE', jurisdiction: 'SG', name: 'Insurance', financiallyRegulated: true },
+  { id: 'SG-CAPITAL-MARKETS', jurisdiction: 'SG', name: 'Capital markets', financiallyRegulated: true },
+  { id: 'SG-PAYMENTS', jurisdiction: 'SG', name: 'Payments', financiallyRegulated: true },
+  { id: 'SG-LISTED', jurisdiction: 'SG', name: 'Listed companies', financiallyRegulated: false },
+  { id: 'SG-HEALTH', jurisdiction: 'SG', name: 'Health', financiallyRegulated: false },
+  { id: 'SG-CRITICAL-INFRASTRUCTURE', jurisdiction: 'SG', name: 'Critical infrastructure', financiallyRegulated: false },
+  { id: 'SG-DEFENCE', jurisdiction: 'SG', name: 'Defence industry', financiallyRegulated: false },
+  { id: 'SG-GENERAL', jurisdiction: 'SG', name: 'Not financially regulated', financiallyRegulated: false },
+];

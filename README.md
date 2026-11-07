@@ -30,9 +30,12 @@ API token with:
 CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... node install.mjs
 ```
 
-It asks for a short client code, whether the client is a **general company** (AI Board Direction and AI
-Confidentiality Exposure Assessment) or a **regulated entity** (all four), the domain, the Zero Trust team domain and
-the first administrator's email. It then:
+It asks for a short client code, the client's **jurisdiction** (Australia or Singapore) and **regulated domain** (for
+example banking, insurance, superannuation, health or critical infrastructure, or none), whether the client is a
+**general company** (AI Board Direction and AI Confidentiality Exposure Assessment) or a **regulated entity** (all four;
+the default when the domain is financially regulated), the domain, the Zero Trust team domain and the first
+administrator's email. The jurisdiction and regulated domain are where each app starts (`DEFAULT_JURISDICTION`,
+`DEFAULT_DOMAIN`); people change both in the apps at any time. The domains are the Triodian Metamodel's list. It then:
 
 1. fetches each app from GitHub;
 2. creates each app's database and the shared identity database;
@@ -42,7 +45,14 @@ the first administrator's email. It then:
 6. lists the addresses. The first administrator signs in and adds people in Admin.
 
 `node install.mjs --dry-run` prints every step and writes the configurations without changing anything in Cloudflare.
-`--answers file.json` takes the answers from a file.
+`--answers file.json` takes the answers from a file, for example:
+
+```json
+{ "code": "acme", "jurisdiction": "AU", "regulatedDomain": "AU-SUPERANNUATION", "profile": "regulated",
+  "domain": "acme.com.au", "teamDomain": "acme.cloudflareaccess.com", "firstAdmins": ["gc@acme.com.au"], "dir": "./triodian-acme" }
+```
+
+`regulatedDomain` is one of the ids in `lib-config.mjs`, or empty.
 
 ## The suite test
 
