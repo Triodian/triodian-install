@@ -1,5 +1,7 @@
 # Triodian installer and suite test
 
+[![Suite test](https://github.com/Triodian/triodian-install/actions/workflows/suite.yml/badge.svg)](https://github.com/Triodian/triodian-install/actions/workflows/suite.yml) [![Licence: Apache 2.0](https://img.shields.io/badge/licence-Apache%202.0-blue.svg)](LICENSE)
+
 Two things for the four Triodian AI governance engagement apps (AI Risk Appetite, AI Use Assessment, AI Confidentiality
 Exposure Assessment and AI Board Direction):
 
@@ -58,3 +60,12 @@ repo: a fine-grained token with read-only **Contents** access to the four app re
 
 The installer fetches the apps anonymously, so it needs the app repos to be public, or git credentials on the machine
 that runs it.
+
+## Contributing
+
+Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md).
+Report security problems privately, as [SECURITY.md](SECURITY.md) describes, not as issues.
+
+## Licence
+
+Open source under the [Apache License, Version 2.0](LICENSE). Copyright 2026 Triodian Pty Ltd. See [`NOTICE`](NOTICE).
