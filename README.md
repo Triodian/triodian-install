@@ -54,6 +54,21 @@ administrator's email. The jurisdiction and regulated sector are where each app 
 
 `sector` is one of the ids in `lib-config.mjs`, or empty.
 
+## The suite test
+
+With the app repos checked out beside this one and `npm ci` run in each app's `tests/e2e`:
+
+```
+node suite/run.mjs
+```
+
+It starts the four apps with `wrangler dev`, sharing one local identity database, and checks that signing in to one
+app signs the person in to the others, that a person added in two apps is one record with roles per app, that Admin
+shows each person's roles in the other apps, that Use Assessment reaches Risk Appetite through the service binding, and
+that signing out of one app signs out of all. GitHub Actions runs it on every push here and once a day
+(`.github/workflows/suite.yml`), against `main` of each app; run it by hand with a branch name to test a change across
+the apps before it merges. It needs no secrets: the app repos are public.
+
 ## The regulated chain (gate G2)
 
 `suite/chain` runs one regulated worked example through AI Board Direction, AI Risk Appetite and AI Use Assessment, with
@@ -70,21 +85,6 @@ cd suite/chain && npm ci && npx playwright test
 ```
 
 The suite workflow runs it after the suite test.
-
-## The suite test
-
-With the app repos checked out beside this one and `npm ci` run in each app's `tests/e2e`:
-
-```
-node suite/run.mjs
-```
-
-It starts the four apps with `wrangler dev`, sharing one local identity database, and checks that signing in to one
-app signs the person in to the others, that a person added in two apps is one record with roles per app, that Admin
-shows each person's roles in the other apps, that Use Assessment reaches Risk Appetite through the service binding, and
-that signing out of one app signs out of all. GitHub Actions runs it on every push here and once a day
-(`.github/workflows/suite.yml`), against `main` of each app; run it by hand with a branch name to test a change across
-the apps before it merges. It needs no secrets: the app repos are public.
 
 ## Contributing
 
