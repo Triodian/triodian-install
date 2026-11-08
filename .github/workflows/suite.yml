@@ -1,5 +1,5 @@
 # Suite test (development plan task 1B.7): runs the four engagement apps together, sharing one local identity
-# database, on every push here and once a day, using the main branch of each app. No secrets.
+# database, on every push here and once a day, using each app's branch of the same name, or main. No secrets.
 # Then the chain test (gate G2): one regulated worked example through Board Direction, Risk Appetite and Use Assessment
 # with their real service bindings (suite/chain).
 name: Suite test
@@ -28,7 +28,9 @@ jobs:
           # private copies of the apps (a fine-grained token with read-only Contents access to them).
           TOKEN: ${{ secrets.SUITE_READ_TOKEN }}
         run: |
-          REF="${{ github.event.inputs.ref || 'main' }}"
+          # The branch asked for, else this branch's name (so a change across the apps on one branch name is tested
+          # together), else main. An app without that branch is tested at main.
+          REF="${{ github.event.inputs.ref || github.head_ref || github.ref_name || 'main' }}"
           AUTH=()
           if [ -n "$TOKEN" ]; then AUTH=(-c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"); fi
           for r in risk_appetite use-assessment Confidentiality-Exposure-Assessment board-direction; do

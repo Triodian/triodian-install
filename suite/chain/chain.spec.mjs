@@ -7,6 +7,7 @@
 //   4. Use Assessment: the calibration set loads over the APPETITE binding; Triodian issues the in-use feed
 //   5. Risk Appetite: decision 3 loads the feed over the ASSESSMENT binding; decision 8 shows the measures
 //   6. Board Direction: the chair takes the board view over the APPETITE binding, and it matches the approved set
+//   7. Board Direction: the APRA letter evidence index gathers all three apps' artefacts over APPETITE (and ASSESSMENT)
 // Each step goes through the apps' own pages and APIs. Agreeing and approving are done the way the pages do them
 // (window.RAF), because the pages require every cell of all eight decisions first; those screens have their own tests.
 import { test, expect } from '@playwright/test';
@@ -222,6 +223,34 @@ test('6 · Board Direction: the chair takes the board view, and it matches the a
   expect(view.inUse.measures.length).toBe(10);
   conforms('board-view-v1.schema.json', view);
   conforms('board-view-v1.schema.json', (await api('ra', 'GET', '/api/board-view')).body);
+  expect(p._errors).toEqual([]);
+  await ctx.close();
+});
+
+// Task R.2: the APRA letter evidence index. Board Direction gathers the artefacts over APPETITE; Risk Appetite adds
+// its own and, over ASSESSMENT, Use Assessment's. Each letter bullet shows its evidence or "none yet".
+test('7 · Board Direction: the evidence index gathers the artefacts of all three apps, by letter bullet and by ISO/IEC 42001 control', async ({ browser }) => {
+  const { ctx, p } = await open(browser, 'bd', P.chair);
+  const r = await api('bd', 'GET', '/api/evidence-from-appetite');
+  expect(r.status).toBe(200);
+  expect(r.body.notes).toEqual([]); // both links answered
+  const art = (app, id) => r.body.artefacts.find(a => a.app === app && a.id === id) || {};
+  expect(art('RA', 'calibration').status).toBe('recorded'); // approved at step 3
+  expect(art('RA', 'inUse').status).toBe('recorded'); // loaded at step 5
+  expect(art('UA', 'FN').status).toBe('recorded'); // the in-use feed issued at step 4
+  expect(art('UA', 'DL1').letter).toContain('G3');
+  const card = p.locator('#evidence');
+  await p.click('[data-act="gatherEvidence"]');
+  await expect(card).toContainText('Gathered from AI Risk Appetite and AI Use Assessment');
+  await expect(card.locator('[data-ev="G3"]')).toContainText('AI dependency register');
+  await expect(card.locator('[data-ev="B2"]')).toContainText('Calibration set');
+  await expect(card.locator('[data-ev="A2"]')).toContainText('none yet');
+  await p.selectOption('#ev-by', 'iso');
+  await expect(card.locator('[data-ev="A.10"]')).toContainText('Findings F1 to F4');
+  const md = await p.evaluate(() => window.BDApp.evidenceMarkdown('letter'));
+  expect(md).toMatch(/## B2 [^]*\| AI Risk Appetite \| Calibration set \| Recorded \|/);
+  expect(md).toMatch(/## G3 [^]*\| AI Use Assessment \| AI dependency register \|/);
+  expect(md).toMatch(/## S3 [^\n]*\n\n[^\n]*\n\nNone yet\./);
   expect(p._errors).toEqual([]);
   await ctx.close();
 });
