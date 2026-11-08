@@ -69,6 +69,23 @@ that signing out of one app signs out of all. GitHub Actions runs it on every pu
 (`.github/workflows/suite.yml`), against `main` of each app; run it by hand with a branch name to test a change across
 the apps before it merges. It needs no secrets: the app repos are public.
 
+## The regulated chain (gate G2)
+
+`suite/chain` runs one regulated worked example through AI Board Direction, AI Risk Appetite and AI Use Assessment, with
+their real service bindings: Coastline Super, a fictional superannuation trustee. The chair records the board
+directions; Risk Appetite loads them, shows them on decision 1 and holds back a ceiling above them (K11); the CRO agrees
+and the board approves the appetite; Use Assessment loads the calibration set and issues the in-use feed; Risk Appetite
+loads the feed on decision 8; and the chair takes the board view, which must match the approved calibration set.
+
+Each app runs in its own `wrangler dev` session; Wrangler's local dev registry connects their bindings as Cloudflare
+does. No secrets and no Cloudflare account. With the app repos checked out beside this one:
+
+```
+cd suite/chain && npm ci && npx playwright test
+```
+
+The suite workflow runs it after the suite test.
+
 ## Contributing
 
 Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md) and the [code of conduct](CODE_OF_CONDUCT.md).
