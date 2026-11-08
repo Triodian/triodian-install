@@ -10,7 +10,20 @@
 // Each step goes through the apps' own pages and APIs. Agreeing and approving are done the way the pages do them
 // (window.RAF), because the pages require every cell of all eight decisions first; those screens have their own tests.
 import { test, expect } from '@playwright/test';
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import Ajv from 'ajv';
 import { APPS, ADMIN } from './playwright.config.mjs';
+
+// Every file that crosses a link is checked against its published schema (Triodian_Metamodel exchange/, task R.4).
+const EXCHANGE = join(resolve(process.env.CHAIN_ROOT || join(dirname(fileURLToPath(import.meta.url)), '../../..')), 'triodian_metamodel/exchange');
+const ajv = new Ajv({ allErrors: true, strict: false });
+for (const f of readdirSync(EXCHANGE).filter(f => f.endsWith('.schema.json'))) ajv.addSchema(JSON.parse(readFileSync(join(EXCHANGE, f), 'utf8')), f);
+function conforms(schemaFile, data) {
+  const v = ajv.getSchema(schemaFile); expect(v, schemaFile).toBeTruthy();
+  const ok = v(data); expect(ok ? [] : v.errors.map(e => `${e.instancePath || '/'} ${e.message}${e.params && e.params.additionalProperty ? ' (' + e.params.additionalProperty + ')' : ''}`), `${schemaFile}`).toEqual([]);
+}
 
 test.describe.configure({ mode: 'serial' });
 const base = k => `http://localhost:${APPS[k].port}`;
@@ -75,6 +88,7 @@ test('1 · Board Direction: the chair records the board directions', async ({ br
   const dir = await api('bd', 'GET', '/api/board-directions');
   expect(dir.status).toBe(200);
   expect(dir.body.directions.BD1.areas.find(a => a.name === 'Claims and group insurance').maxTier).toBe('A2');
+  conforms('board-directions-v1.schema.json', dir.body);
   expect(p._errors).toEqual([]);
   await ctx.close();
 });
@@ -141,6 +155,7 @@ test('3 · Risk Appetite: the CRO agrees the working appetite and the board appr
   expect(cal.status).toBe(200);
   expect(cal.body.status).toBe('approved');
   expect(cal.body.calibrationSet.parameters.P1['Claims and group insurance'].own.tier).toBe('A3');
+  conforms('calibration-set-v1.schema.json', cal.body.calibrationSet);
   expect(b.p._errors).toEqual([]);
   await b.ctx.close();
 });
@@ -172,6 +187,7 @@ test('4 · Use Assessment: the calibration set loads over the binding, and Triod
   expect(f.body.schema).toBe('triodian.aua.extract.v2');
   expect(f.body.measures.map(m => m.ref)).toEqual(['M1', 'M2', 'M3', 'M4', 'M5', 'M6', 'M7', 'M8', 'M9', 'M10']);
   expect(f.body.measures.find(m => m.ref === 'M1').value).not.toBeNull(); // counted, now the calibration set is loaded
+  conforms('register-extract-v2.schema.json', f.body);
   expect(p._errors).toEqual([]);
   await ctx.close();
 });
@@ -204,6 +220,8 @@ test('6 · Board Direction: the chair takes the board view, and it matches the a
   const view = (await stored('bd')).data.boardViews[0].view, cal = await api('ra', 'GET', '/api/calibration-set');
   expect(JSON.stringify(view.approved)).toBe(JSON.stringify(cal.body)); // the board view is the approved set, word for word
   expect(view.inUse.measures.length).toBe(10);
+  conforms('board-view-v1.schema.json', view);
+  conforms('board-view-v1.schema.json', (await api('ra', 'GET', '/api/board-view')).body);
   expect(p._errors).toEqual([]);
   await ctx.close();
 });

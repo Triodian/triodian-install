@@ -3,6 +3,12 @@
   "private": true,
   "type": "module",
   "description": "Gate G2 (development plan): one regulated worked example through AI Board Direction, AI Risk Appetite and AI Use Assessment, run together with their real service bindings.",
-  "scripts": { "test": "playwright test" },
-  "devDependencies": { "@playwright/test": "^1.48.0", "wrangler": "^4.40.0" }
+  "scripts": {
+    "test": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0",
+    "ajv": "^8.20.0",
+    "wrangler": "^4.40.0"
+  }
 }
