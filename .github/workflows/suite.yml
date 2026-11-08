@@ -41,6 +41,8 @@ jobs:
             fi
             (cd "$d/tests/e2e" && npm ci --no-audit --no-fund)
           done
+          # The chain test checks every linked file against the published exchange schemas (task R.4).
+          git clone --quiet --depth 1 https://github.com/Triodian/Triodian_Metamodel.git triodian_metamodel
       - name: Check the installer's configurations
         run: cd triodian-install && node test-install.mjs
       - name: Run the apps together

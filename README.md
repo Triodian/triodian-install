@@ -81,7 +81,7 @@ the apps before it merges. It needs no secrets: the app repos are public.
 their real service bindings: Coastline Super, a fictional superannuation trustee. The chair records the board
 directions; Risk Appetite loads them, shows them on decision 1 and holds back a ceiling above them (K11); the CRO agrees
 and the board approves the appetite; Use Assessment loads the calibration set and issues the in-use feed; Risk Appetite
-loads the feed on decision 8; and the chair takes the board view, which must match the approved calibration set.
+loads the feed on decision 8; and the chair takes the board view, which must match the approved calibration set. Every file that crosses a link is checked against its published schema in Triodian_Metamodel `exchange/` (checked out beside the apps).
 
 Each app runs in its own `wrangler dev` session; Wrangler's local dev registry connects their bindings as Cloudflare
 does. No secrets and no Cloudflare account. With the app repos checked out beside this one:
