@@ -54,6 +54,12 @@ administrator's email. The jurisdiction and regulated sector are where each app 
 
 `sector` is one of the ids in `lib-config.mjs`, or empty.
 
+## Security answers for a client's review
+
+A regulated client will review Triodian as a service provider. [docs/security-answers.md](docs/security-answers.md)
+answers the usual questions from what the code does today, and lists what is not yet in place (a location hint for
+the databases, a Content-Security-Policy, single sign-on, tested backups, a penetration test).
+
 ## The suite test
 
 With the app repos checked out beside this one and `npm ci` run in each app's `tests/e2e`:
