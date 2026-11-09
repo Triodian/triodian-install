@@ -4,14 +4,18 @@
 //   1. Board Direction: the chair records the board directions BD1 to BD7
 //   2. Risk Appetite: set-up loads them over the BOARD binding; decision 1 shows them; K11 holds back a ceiling above BD1
 //   3. Risk Appetite: the CRO agrees the working appetite and the board approves it, which issues the calibration set
-//   4. Use Assessment: the calibration set loads over the APPETITE binding; Triodian issues the in-use feed
+//   4. Use Assessment: Coastline's own provider register is imported (R.1) in Lite scope (R.3); the calibration set loads
+//      over the APPETITE binding; Triodian issues the in-use feed
 //   5. Risk Appetite: decision 3 loads the feed over the ASSESSMENT binding; decision 8 shows the measures
 //   6. Board Direction: the chair takes the board view over the APPETITE binding, and it matches the approved set
-//   7. Board Direction: the APRA letter evidence index gathers all three apps' artefacts over APPETITE (and ASSESSMENT)
+//   7. Board Direction: the APRA letter evidence index gathers all three apps' artefacts over APPETITE (and ASSESSMENT),
+//      and Use Assessment's say they cover the Lite scope
+// Steps 1 to 7 together are gate G-ART (ready for ART): a super trustee, from an imported register, in Lite scope, to the
+// APRA letter evidence index. Steps 1 to 6 are gate G2.
 // Each step goes through the apps' own pages and APIs. Agreeing and approving are done the way the pages do them
 // (window.RAF), because the pages require every cell of all eight decisions first; those screens have their own tests.
 import { test, expect } from '@playwright/test';
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import Ajv from 'ajv';
@@ -161,19 +165,45 @@ test('3 · Risk Appetite: the CRO agrees the working appetite and the board appr
   await b.ctx.close();
 });
 
-test('4 · Use Assessment: the calibration set loads over the binding, and Triodian issues the in-use feed', async ({ browser }) => {
-  // The assessment starts from the worked example's register, re-pointed at Coastline and the super pack.
-  const ex = await open(browser, 'ua', ADMIN, '/', true);
-  await expect(ex.p.locator('.examplebar', { hasText: 'Worked example:' })).toBeVisible({ timeout: 15_000 });
-  const data = await ex.p.evaluate(() => JSON.parse(JSON.stringify(window.AUA.state)));
-  await ex.ctx.close();
-  Object.assign(data.engagement, { id: 'e-coastline-ua', example: false, insurer: 'Coastline Super (fictional)', sectorPack: 'superTrustee', reference: 'CS-UA-2026' });
-  data.calibration = { loaded: false, status: 'default', version: 0, date: '', approvedBy: '', agreedBy: '', privilegeMarking: '', minuteRef: '', fellBack: [], parameters: {} };
-  data.versions = []; data.previous = null; data.history = []; delete data.feedback;
-  const put = await api('ua', 'PUT', '/api/engagement', { revision: 0, data });
-  expect(put.status, JSON.stringify(put.body).slice(0, 300)).toBe(200);
+// Coastline's provider register (the client's own, as a GRC tool exports it): 52 rows over 7 arrangements, 6 of which
+// name the critical operation Benefit payments, and two malformed rows the import refuses with the line and reason.
+const REGISTER = join(dirname(fileURLToPath(import.meta.url)), 'fixtures/coastline-provider-register.csv');
 
+test('4 · Use Assessment: Coastline’s provider register is imported in Lite scope, the calibration set loads over the binding, and Triodian issues the in-use feed', async ({ browser }) => {
   const { ctx, p } = await open(browser, 'ua', P.mo);
+  await p.locator('[data-act="new"]').first().click();
+  await expect(p.locator('body')).toContainText('Set up the assessment');
+  await saved('ua', d => !!d.engagement);
+  // Set-up, through the set-up screen: the trustee, the super pack, and Lite scope
+  await p.locator('#f_engagement_insurer').fill('Coastline Super (fictional)'); await p.locator('#f_engagement_insurer').blur();
+  await p.locator('#f_engagement_reference').fill('CS-UA-2026'); await p.locator('#f_engagement_reference').blur();
+  await p.locator('#f_engagement_sectorPack').selectOption('superTrustee');
+  await p.locator('#f_engagement_scope').selectOption('lite');
+  await saved('ua', d => d.engagement.sectorPack === 'superTrustee' && d.engagement.scope === 'lite' && d.engagement.insurer === 'Coastline Super (fictional)');
+  // The register, imported on the Set screen (R.1)
+  await p.evaluate(() => window.AUA.go('set'));
+  await p.setInputFiles('#registerIn', REGISTER);
+  await expect(p.locator('#toast')).toContainText('50 register entries imported into 7 new arrangements; 2 rows refused');
+  await expect(p.locator('body')).toContainText('Line 28: no provider');
+  await expect(p.locator('body')).toContainText('Line 29: Boundary "B9" is not one of B1, B2, B3');
+  await saved('ua', d => (d.entries || []).length === 50 && d.arrangements.length === 7);
+  const st = await p.evaluate(() => { const S = window.AUA.state; return { arr: S.arrangements.map(a => a.externalId), ent: S.entries.map(e => e.externalId) }; });
+  expect(st.arr).toEqual(['PR-0101', 'PR-0102', 'PR-0103', 'PR-0104', 'PR-0105', 'PR-0106', 'PR-0107']); // the client's ids are kept
+  // Lite scope (R.3): the six arrangements behind Benefit payments are assessed; PR-0103 is left out, and every output says so
+  await expect(p.locator('body')).toContainText('Lite scope: 6 arrangements behind critical operations are assessed');
+  const lite = await p.evaluate(() => ({ ids: Object.fromEntries(window.AUA.state.arrangements.map(a => [a.externalId, a.id])), outs: ['DL1', 'DL2', 'DL6', 'RP', 'CM'].map(id => window.AUA.output(id)) }));
+  for (const md of lite.outs) {
+    expect(md).toMatch(/\*\*Scope: Lite\.\*\* 6 arrangements behind critical operations are assessed/);
+    expect(md).toContain('1 is left out for later triage');
+    expect(md).toContain(lite.ids['PR-0103']);
+  }
+  // The register goes back out in the import format with the client's ids, for the GRC tool (R.1)
+  const back = await p.evaluate(() => window.AUAImport.readArrangements(window.AUA.registerCsv()));
+  expect(back.refused).toEqual([]);
+  expect([...new Set(back.rows.map(r => r.providerId))]).toEqual(st.arr);
+  expect(back.rows.map(r => r.systemId)).toEqual(st.ent);
+
+  // The approved calibration set, over the APPETITE binding
   await p.evaluate(() => window.AUA.go('setup'));
   await p.click('[data-act="loadCalApp"]');
   await expect(p.locator('#toast')).toContainText('Calibration loaded');
@@ -239,6 +269,10 @@ test('7 · Board Direction: the evidence index gathers the artefacts of all thre
   expect(art('RA', 'inUse').status).toBe('recorded'); // loaded at step 5
   expect(art('UA', 'FN').status).toBe('recorded'); // the in-use feed issued at step 4
   expect(art('UA', 'DL1').letter).toContain('G3');
+  // Use Assessment ran in Lite scope, and its artefacts say so, so the index does not read as the whole estate
+  expect(art('UA', 'DL1').note).toContain('Lite scope: 6 of 7 arrangements, those behind critical operations; 1 left out for later triage');
+  expect(art('UA', 'FN').note).toContain('Lite scope: 6 of 7');
+  expect(art('UA', 'EP').note).not.toContain('Lite scope');
   const card = p.locator('#evidence');
   await p.click('[data-act="gatherEvidence"]');
   await expect(card).toContainText('Gathered from AI Risk Appetite and AI Use Assessment');
@@ -250,7 +284,12 @@ test('7 · Board Direction: the evidence index gathers the artefacts of all thre
   const md = await p.evaluate(() => window.BDApp.evidenceMarkdown('letter'));
   expect(md).toMatch(/## B2 [^]*\| AI Risk Appetite \| Calibration set \| Recorded \|/);
   expect(md).toMatch(/## G3 [^]*\| AI Use Assessment \| AI dependency register \|/);
+  expect(md).toMatch(/\| AI Use Assessment \| AI dependency register \|[^\n]*Lite scope: 6 of 7 arrangements/);
   expect(md).toMatch(/## S3 [^\n]*\n\n[^\n]*\n\nNone yet\./);
+  if (process.env.CHAIN_OUT) { // the index as Coastline would receive it, for a person to read
+    writeFileSync(join(process.env.CHAIN_OUT, 'evidence-index-by-letter.md'), md);
+    writeFileSync(join(process.env.CHAIN_OUT, 'evidence-index-by-iso.md'), await p.evaluate(() => window.BDApp.evidenceMarkdown('iso')));
+  }
   expect(p._errors).toEqual([]);
   await ctx.close();
 });

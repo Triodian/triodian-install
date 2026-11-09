@@ -75,13 +75,16 @@ that signing out of one app signs out of all. GitHub Actions runs it on every pu
 (`.github/workflows/suite.yml`), against `main` of each app; run it by hand with a branch name to test a change across
 the apps before it merges. It needs no secrets: the app repos are public.
 
-## The regulated chain (gate G2)
+## The regulated chain (gates G2 and G-ART)
 
 `suite/chain` runs one regulated worked example through AI Board Direction, AI Risk Appetite and AI Use Assessment, with
 their real service bindings: Coastline Super, a fictional superannuation trustee. The chair records the board
 directions; Risk Appetite loads them, shows them on decision 1 and holds back a ceiling above them (K11); the CRO agrees
-and the board approves the appetite; Use Assessment loads the calibration set and issues the in-use feed; Risk Appetite
-loads the feed on decision 8; and the chair takes the board view, which must match the approved calibration set. Every file that crosses a link is checked against its published schema in Triodian_Metamodel `exchange/` (checked out beside the apps).
+and the board approves the appetite; Use Assessment imports Coastline's own provider register (`suite/chain/fixtures`,
+refusing two malformed rows), runs in Lite scope over the six arrangements behind critical operations, loads the
+calibration set and issues the in-use feed; Risk Appetite loads the feed on decision 8; the chair takes the board view,
+which must match the approved calibration set; and Board Direction gathers the APRA letter evidence index, where Use
+Assessment's artefacts say they cover the Lite scope. Set `CHAIN_OUT` to a folder to keep the index as Markdown. Every file that crosses a link is checked against its published schema in Triodian_Metamodel `exchange/` (checked out beside the apps).
 
 Each app runs in its own `wrangler dev` session; Wrangler's local dev registry connects their bindings as Cloudflare
 does. No secrets and no Cloudflare account. With the app repos checked out beside this one:
