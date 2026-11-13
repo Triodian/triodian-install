@@ -170,6 +170,7 @@ every Annex A control and where Triodian stands on it, and the [privacy notice f
 | Audit log export to the client's SIEM | Not started |
 | Independent penetration test | Not started by Triodian. A client may run its own against a test deployment, with a written scope and a remediation window (section 8) |
 | ISO/IEC 27001 certification | Not held. An Annex A control statement is published; rows about Triodian as a company are waiting on confirmation |
+| Triodian's own ISO/IEC 42001 position | Draft for decision ([iso42001-position.md](iso42001-position.md)); not certified today |
 | Privacy notice for the apps | Drafted (`privacy.md`); for counsel |
 | Agreement terms: incident notice, audit and access rights, sub-contractors, data location, exit | For counsel |
 | Counsel's review of this page | Waiting |
