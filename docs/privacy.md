@@ -50,7 +50,7 @@ The apps set a session cookie when you sign in. They load no third-party scripts
 ## Where it is held
 
 In Cloudflare D1 databases in the Cloudflare account the apps are installed in, encrypted at rest and in transit.
-Cloudflare places each database, near where it was created unless a location hint is given, and a hint is a preference only; there is no setting that keeps it in Australia. The [security answers](security-answers.md)
+Cloudflare places each database near where it was created unless a location hint is given; a hint is a preference only, and there is no setting that keeps a database in Australia. The [security answers](security-answers.md)
 say more, including what is not yet in place.
 
 ## How long it is kept
