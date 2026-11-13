@@ -280,7 +280,8 @@ test('7 · Board Direction: the evidence index gathers the artefacts of all thre
   await expect(card.locator('[data-ev="B2"]')).toContainText('Calibration set');
   await expect(card.locator('[data-ev="A2"]')).toContainText('none yet');
   await p.selectOption('#ev-by', 'iso');
-  await expect(card.locator('[data-ev="A.10"]')).toContainText('Findings F1 to F4');
+  // Findings sit under A.10.3 (suppliers) once Board Direction tags controls, under the A.10 group before that.
+  await expect(card.locator('[data-ev^="A.10"]').filter({ hasText: 'Findings F1 to F4' }).first()).toBeVisible();
   const md = await p.evaluate(() => window.BDApp.evidenceMarkdown('letter'));
   expect(md).toMatch(/## B2 [^]*\| AI Risk Appetite \| Calibration set \| Recorded \|/);
   expect(md).toMatch(/## G3 [^]*\| AI Use Assessment \| AI dependency register \|/);

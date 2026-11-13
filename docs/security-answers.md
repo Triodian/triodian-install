@@ -1,6 +1,6 @@
 # Security answers for a client's provider review
 
-**Draft for counsel's review · as at 8 November 2026 · Triodian Pty Ltd (ABN 34 703 647 750), Brisbane**
+**Draft for counsel's review · as at 13 November 2026 · Triodian Pty Ltd (ABN 34 703 647 750), Brisbane**
 
 A regulated client that uses the Triodian AI governance apps will review Triodian as a service provider, under its
 operational risk and information security obligations (for an APRA-regulated entity, CPS 230 and CPS 234). This page
@@ -8,11 +8,14 @@ answers the questions such a review usually asks, from what the code in these re
 is not yet in place, it says so. Whether Triodian is a material service provider, and which obligations apply, is the
 client's assessment.
 
+Two pages sit beside this one: the [ISO/IEC 27001:2022 Annex A control statement](iso27001-annex-a.md), which lists
+every Annex A control and where Triodian stands on it, and the [privacy notice for the apps](privacy.md).
+
 ## The short answers
 
 | Question | Answer |
 | --- | --- |
-| What do the apps hold? | Engagement records: positions, classifications, findings, questions for counsel, and the names, work emails and roles of the people in the engagement. No member, customer or policyholder data, and no source documents. |
+| What do the apps hold? | Engagement records: positions, classifications, findings, questions for counsel, and personal information about the people in the engagement: their names, work emails and roles, who made each change and, in AI Board Direction, directors' briefing answers. No member, customer or client personal information, and no source documents. See the [privacy notice](privacy.md). |
 | Where is it held? | In Cloudflare D1 databases in the Cloudflare account the apps are installed in. |
 | Is it encrypted? | Yes, by Cloudflare: AES-256 at rest and TLS in transit, with keys Cloudflare manages ([Cloudflare D1 data security](https://developers.cloudflare.com/d1/platform/data-security)). |
 | Who can sign in? | Only people an administrator has added, after email verification through Cloudflare Access. What each person may change is enforced on the server by role. |
@@ -41,7 +44,10 @@ client's assessment.
 - **For AI Use Assessment, the register of AI arrangements:** the function, provider and platform names, authority
   and consequence classifications, evidence levels and findings. This is the most commercially sensitive content the
   apps hold.
-- **People:** each person's name, organisation, work email and roles, in the shared identity database.
+- **People:** each person's name, organisation, work email and roles, in the shared identity database. This is
+  personal information; the [privacy notice](privacy.md) lists it.
+- **Directors' briefing answers (AI Board Direction):** each director's answers and the dates they read and completed
+  the briefing, in a table of their own. Only the director, the board adviser and the facilitator see the answers.
 - **An audit log** of user and role changes, saves and refused saves, and the last 200 saved versions of the
   engagement, used to merge two people's edits.
 - **Email notifications** in an outbox table, with their status.
@@ -49,7 +55,7 @@ client's assessment.
 
 **Not held:**
 
-- No member, customer or policyholder personal information. The method works from the client's own documents about
+- No member, customer or client personal information. The method works from the client's own documents about
   its AI arrangements, and the apps record conclusions about those arrangements, not the documents.
 - No source documents. Files a user loads, such as a matter brief, a calibration set or a board directions file, are
   read in the browser, and only the fields the app keeps are saved.
@@ -126,8 +132,15 @@ client's assessment.
   them.
 - **Dependencies:** Dependabot raises security updates for them.
 - **Headers:** responses carry `X-Content-Type-Options`, `X-Frame-Options: DENY` and a strict `Referrer-Policy`.
-- **Gaps:** no Content-Security-Policy header yet, no independent penetration test, and no SOC 2 or ISO 27001
-  certification of Triodian itself.
+- **Gaps:** no Content-Security-Policy header yet, no independent penetration test, and no SOC 2 or ISO/IEC 27001
+  certification of Triodian itself. The [Annex A control statement](iso27001-annex-a.md) says where each control
+  stands.
+- **A client's own penetration test:** a client may test the apps itself. Triodian offers three things for it:
+  - **A target:** a test deployment made by `install.mjs`, with fictional data, separate from any engagement.
+  - **A written scope:** the hosts, the roles and test accounts provided, what is out of scope (Cloudflare's own
+    platform, under Cloudflare's testing policy), and the dates.
+  - **A remediation window:** time agreed in advance to fix what the test finds, and a re-test, before the engagement
+    opens.
 
 ## 9. Vulnerabilities and incidents
 
@@ -155,7 +168,10 @@ client's assessment.
 | Single sign-on with the client's identity provider | Not started |
 | Backups and point-in-time restore for client deployments, with a tested restore | Not started |
 | Audit log export to the client's SIEM | Not started |
-| Independent penetration test | Not started |
+| Independent penetration test | Not started by Triodian. A client may run its own against a test deployment, with a written scope and a remediation window (section 8) |
+| ISO/IEC 27001 certification | Not held. An Annex A control statement is published; rows about Triodian as a company are waiting on confirmation |
+| Triodian's own ISO/IEC 42001 position | Draft for decision ([iso42001-position.md](iso42001-position.md)); not certified today |
+| Privacy notice for the apps | Drafted (`privacy.md`); for counsel |
 | Agreement terms: incident notice, audit and access rights, sub-contractors, data location, exit | For counsel |
 | Counsel's review of this page | Waiting |
 
