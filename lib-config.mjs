@@ -26,10 +26,10 @@ export function stripJsonc(text) {
 }
 export const readConfig = path => JSON.parse(stripJsonc(readFileSync(path, 'utf8')));
 
-/** Jurisdictions the apps cover, and their regulated sectors (Triodian Metamodel 2.5.0, reference-data/regulated-sectors.json).
+/** Jurisdictions the apps cover, and their regulated sectors (Triodian Metamodel 2.9.0, reference-data/regulated-sectors.json).
     test-install.mjs checks this list against AI Board Direction's copy. A deployment starts in the jurisdiction and sector chosen
     here (DEFAULT_JURISDICTION, DEFAULT_SECTOR); each app lets people change both later. */
-export const JURISDICTIONS = [['AU', 'Australia'], ['SG', 'Singapore']];
+export const JURISDICTIONS = [['AU', 'Australia'], ['SG', 'Singapore'], ['US', 'United States']];
 export const SECTORS = [
   { id: 'AU-BANKING', jurisdiction: 'AU', name: 'Banking', financiallyRegulated: true },
   { id: 'AU-INSURANCE', jurisdiction: 'AU', name: 'Insurance', financiallyRegulated: true },
@@ -51,4 +51,12 @@ export const SECTORS = [
   { id: 'SG-CRITICAL-INFRASTRUCTURE', jurisdiction: 'SG', name: 'Critical infrastructure', financiallyRegulated: false },
   { id: 'SG-DEFENCE', jurisdiction: 'SG', name: 'Defence industry', financiallyRegulated: false },
   { id: 'SG-GENERAL', jurisdiction: 'SG', name: 'Not financially regulated', financiallyRegulated: false },
+  { id: 'US-BANKING', jurisdiction: 'US', name: 'Banking', financiallyRegulated: true },
+  { id: 'US-INSURANCE', jurisdiction: 'US', name: 'Insurance', financiallyRegulated: true },
+  { id: 'US-SECURITIES', jurisdiction: 'US', name: 'Securities and investment advice', financiallyRegulated: true },
+  { id: 'US-HEALTH', jurisdiction: 'US', name: 'Health care', financiallyRegulated: false },
+  { id: 'US-CRITICAL-INFRASTRUCTURE', jurisdiction: 'US', name: 'Critical infrastructure', financiallyRegulated: false },
+  { id: 'US-PAYMENTS', jurisdiction: 'US', name: 'Payments and money transmission', financiallyRegulated: true },
+  { id: 'US-LISTED', jurisdiction: 'US', name: 'Listed companies', financiallyRegulated: false },
+  { id: 'US-GENERAL', jurisdiction: 'US', name: 'Not financially regulated', financiallyRegulated: false },
 ];
