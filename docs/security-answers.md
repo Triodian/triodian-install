@@ -71,9 +71,12 @@ every Annex A control and where Triodian stands on it, and the [privacy notice f
   hint such as `oc` (Oceania) is a preference, not a guarantee. D1 can be restricted by jurisdiction only to the
   European Union, FedRAMP data centres or the United States; there is no Australian jurisdiction
   ([Cloudflare D1 data location](https://developers.cloudflare.com/d1/configuration/data-location/)).
-- **Gap:** `install.mjs` does not yet pass a location hint. Until it does, a database created from Australia will
-  usually be placed nearby, but this is not assured. Confirm the location in the Cloudflare dashboard after
-  installation.
+- **Australian residency: not guaranteed.** `install.mjs` passes a location hint from the jurisdiction (`oc` for an
+  Australian install, since 15 November 2026). That is a preference D1 usually honours, not a guarantee, and there is
+  no Cloudflare jurisdiction that pins data to Australia. So the apps as deployed today cannot promise that data is
+  held in Australia. Confirm each database's location in the Cloudflare dashboard after installation and record it in
+  the client's file. Residency as a guarantee needs the self-hosted route (section 10: the same code on the client's
+  own AWS or Azure account in an Australian region), which is planned, not delivered.
 - **Offshoring:** if the client needs data held in Australia as a condition, that has to be agreed and checked before
   installation. For an APRA-regulated entity, holding data offshore can also carry a notification duty.
 
@@ -156,17 +159,20 @@ every Annex A control and where Triodian stands on it, and the [privacy notice f
   Schemas in Triodian_Metamodel (`exchange/`), so another tool can read them.
 - **Moving off Cloudflare:** the apps are built so the same code can run on AWS or Azure for one organisation. Only the
   entry point, identity and storage adapters change (`risk_appetite/docs/architecture.md`).
-- **Gap:** backups and point-in-time restore have not yet been set and tested for client deployments. The architecture
-  notes list this, with data residency, as work before an enterprise go-live.
+- **Backups and restore:** D1 keeps 30 days of point-in-time history on its own. The export, restore and check
+  procedure is written in [restore.md](restore.md); it has **not yet been exercised** on a client or test deployment
+  (its record table says when it has). Until then this stays an open item.
 
 ## 11. Open items before a regulated client relies on the apps
 
 | Item | Status |
 | --- | --- |
-| Location hint (`oc`) in `install.mjs`, and a check of each database's location after installation | Not started |
+| Location hint in `install.mjs` (from the jurisdiction, `oc` for Australia), and a check of each database's location after installation | Hint added 15 Nov 2026; the check after installation is a step in the runbook. Residency itself is not guaranteed on D1 (section 3) |
 | Content-Security-Policy header on every app | Not started |
+| Findings of the 15 November 2026 security review: blind-review disclosure, cross-app email change, bootstrap list, first-save checks, deploy gated on CI | Fixed in the apps' security-review-15nov pull requests (use-assessment #35, Confidentiality-Exposure-Assessment #26, risk_appetite #36, board-direction #50); each fix has a test that failed before it |
+| Releases pinned: each client install fetches the release named in `releases.json`, not the head of main | Done 15 Nov 2026 |
 | Single sign-on with the client's identity provider | Not started |
-| Backups and point-in-time restore for client deployments, with a tested restore | Not started |
+| Backups and point-in-time restore for client deployments, with a tested restore | Procedure written ([restore.md](restore.md), 15 Nov 2026); not yet exercised |
 | Audit log export to the client's SIEM | Not started |
 | Independent penetration test | Not started by Triodian. A client may run its own against a test deployment, with a written scope and a remediation window (section 8) |
 | ISO/IEC 27001 certification | Not held. An Annex A control statement is published; rows about Triodian as a company are waiting on confirmation |

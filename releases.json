@@ -1,0 +1,10 @@
+{
+  "note": "The release of each app that install.mjs fetches and deploys: a git tag or commit, so a client install is the same code every time and a later push to main does not change what a client runs (security review 15 Nov 2026, S.8). Move an app forward here deliberately, after its CI is green, and record the date. `node install.mjs --latest` ignores this file and takes each repo's main.",
+  "pinned_on": "2026-11-15",
+  "apps": {
+    "risk-appetite": { "ref": "47d5665bff45baaaedda42a9c220106affd4fc45", "note": "main as at 15 Nov 2026, before the security review PR (#36)" },
+    "use-assessment": { "ref": "9a4a8032322fcd4a6946ceb0fd88cd5ce59bed0b", "note": "main as at 15 Nov 2026, before the security review PR (#35)" },
+    "confidentiality": { "ref": "3d37056cbbbf70473b8b3df2abb055f2bf9c42da", "note": "main as at 15 Nov 2026, before the security review PR (#26)" },
+    "board-direction": { "ref": "d4914d8bf4803da14d240a6067919cd8f9652964", "note": "main as at 15 Nov 2026, before the security review PR (#50)" }
+  }
+}

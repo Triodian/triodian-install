@@ -31,7 +31,7 @@ export default defineConfig({
   webServer: Object.entries(APPS).map(([k, a], i) => ({
     cwd: join(ROOT, a.dir),
     command: [`node ${wrangler} dev`, `--port ${a.port} --ip 127.0.0.1 --local-upstream localhost`, `--inspector-port ${9331 + i}`,
-      `--persist-to ${join(persist, k)}`, `--var LOCAL_DEV_NO_SIGNIN_EMAIL:${ADMIN}`, '--var NOTIFY_SENDING:off', `--var SITE_URL:http://localhost:${a.port}`,
+      `--persist-to ${join(persist, k)}`, `--var LOCAL_DEV_NO_SIGNIN_EMAIL:${ADMIN}`, `--var FIRST_ADMINS:${ADMIN}`, '--var NOTIFY_SENDING:off', `--var SITE_URL:http://localhost:${a.port}`,
       '--show-interactive-dev-session=false'].join(' '),
     env: { ...process.env, WRANGLER_REGISTRY_PATH: registry },
     url: `http://localhost:${a.port}/login/`,

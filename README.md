@@ -42,12 +42,17 @@ United States main sector: banking, insurance, securities and investment advice,
 else the baseline itself (payments). With a jurisdiction and no sector, it starts on that jurisdiction's first pack.
 There is no currency setting: amounts are written in each engagement in the client's own terms. It then:
 
-1. fetches each app from GitHub;
-2. creates each app's database and the shared identity database;
+1. fetches each app from GitHub at the release pinned in `releases.json` (a commit or tag per app, moved forward on
+   purpose; `--latest` takes each repo's main instead);
+2. creates each app's database and the shared identity database, with a D1 location hint from the jurisdiction (`oc`
+   for Australia): a placement preference, not a residency guarantee, see `docs/security-answers.md` section 3;
 3. writes each app's configuration (`wrangler.<code>.json`, beside its `wrangler.jsonc`), with the demo off;
 4. creates an Access application for each app's `/auth/email` and stores its tag on the Worker;
 5. deploys, Risk Appetite first, because Use Assessment binds to it;
-6. lists the addresses. The first administrator signs in and adds people in Admin.
+6. lists the addresses. The first administrator (`FIRST_ADMINS`, the only way an administrator is created: nothing
+   is compiled into the apps) signs in once, which closes that path for good, and adds people in Admin.
+
+Backup and restore of a deployment: `docs/restore.md`.
 
 `node install.mjs --dry-run` prints every step and writes the configurations without changing anything in Cloudflare.
 `--answers file.json` takes the answers from a file, for example:
