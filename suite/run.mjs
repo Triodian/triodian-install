@@ -27,6 +27,7 @@ function suiteConfig(app, i) {
   c.vars = { ...(c.vars || {}), NOTIFY_SENDING: 'off', SUITE_DEMO: 'on', SUITE_SESSION_COOKIE: 'tri_suite', SUITE_COOKIE_DOMAIN: '' };
   for (const k of ['DEMO_LOGIN', 'DEMO_ADMINS']) c.vars[k] = '';
   if (i === 0) c.vars.LOCAL_DEV_NO_SIGNIN_EMAIL = ADMIN;
+  c.vars.FIRST_ADMINS = ADMIN; // the harness's first administrator; the apps compile none in (security review 15 Nov 2026, S.4)
   const path = join(dir, 'wrangler.suite.local.jsonc');
   writeFileSync(path, JSON.stringify(c, null, 2)); written.push(path);
   return path;

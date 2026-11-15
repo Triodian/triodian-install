@@ -8,16 +8,25 @@
 //   CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... node install.mjs
 //   node install.mjs --dry-run            prints every step and writes the configurations, changes nothing in Cloudflare
 //   node install.mjs --answers file.json  takes the answers from a file instead of asking
+//   node install.mjs --latest             fetches each app's main instead of the release pinned in releases.json
 //
 // The API token needs: Account · D1 · Edit, Account · Workers Scripts · Edit, Zone · Workers Routes · Edit (on the
 // domain's zone), Account · Access: Apps and Policies · Edit. Node 20 or later, and git.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createInterface } from 'node:readline/promises';
 import { APPS, appsFor, readConfig, JURISDICTIONS, SECTORS } from './lib-config.mjs';
 
-const args = process.argv.slice(2), DRY = args.includes('--dry-run');
+const args = process.argv.slice(2), DRY = args.includes('--dry-run'), LATEST = args.includes('--latest');
+const HERE = dirname(fileURLToPath(import.meta.url));
+/** The release of each app to install: a tag or commit from releases.json, so every client runs the same reviewed code
+ *  until this file is moved forward on purpose (security review 15 Nov 2026, S.8). */
+const RELEASES = JSON.parse(readFileSync(join(HERE, 'releases.json'), 'utf8')).apps;
+// D1 location hints by jurisdiction: a preference for where the database is placed, not a residency guarantee
+// (docs/security-answers.md). Cloudflare offers no Australian jurisdiction; oc is Oceania, apac is Asia-Pacific.
+const LOCATION_HINT = { AU: 'oc', SG: 'apac', CA: 'enam', EU: 'weur', US: 'enam' };
 const answersFile = args.includes('--answers') ? args[args.indexOf('--answers') + 1] : null;
 const say = s => console.log(s), step = s => console.log('\n· ' + s);
 const SUB = { 'risk-appetite': 'risk-appetite', 'use-assessment': 'use-assessment', confidentiality: 'confidentiality', 'board-direction': 'board-direction' };
@@ -57,8 +66,8 @@ async function cf(path, body) {
   if (!j.success) throw new Error(`Cloudflare API ${path}: ${JSON.stringify(j.errors)}`);
   return j;
 }
-function d1Create(cwd, name) {
-  const out = wrangler(cwd, ['d1', 'create', name]);
+function d1Create(cwd, name, hint) {
+  const out = wrangler(cwd, ['d1', 'create', name, ...(hint ? ['--location', hint] : [])]);
   if (DRY) return 'DRY-RUN-' + name;
   const m = out.match(/"database_id":\s*"([0-9a-f-]{36})"/) || out.match(/database_id\s*=\s*"([0-9a-f-]{36})"/);
   if (!m) throw new Error(`Could not read the id of the new database ${name}. Output:\n${out}`);
@@ -95,15 +104,18 @@ async function main() {
   step('Fetching the apps');
   mkdirSync(a.dir, { recursive: true });
   for (const app of apps) {
-    const dir = join(a.dir, app.dir);
-    if (existsSync(join(dir, '.git'))) run('git', ['-C', dir, 'pull', '--ff-only']);
-    else run('git', ['clone', '--depth', '1', `https://github.com/Triodian/${app.repo}.git`, dir]);
+    const dir = join(a.dir, app.dir), ref = LATEST ? null : (RELEASES[app.id] || {}).ref;
+    if (!existsSync(join(dir, '.git'))) run('git', ['clone', '--depth', '1', `https://github.com/Triodian/${app.repo}.git`, dir]);
+    if (ref) { say(`  ${app.name}: release ${ref}`); run('git', ['-C', dir, 'fetch', '--depth', '1', 'origin', ref]); run('git', ['-C', dir, 'checkout', '--detach', 'FETCH_HEAD']); }
+    else run('git', ['-C', dir, 'pull', '--ff-only']);
   }
   if (DRY) for (const app of apps) if (!existsSync(join(a.dir, app.dir, 'wrangler.jsonc'))) throw new Error(`Dry run: ${join(a.dir, app.dir)} has no wrangler.jsonc. Point the folder at existing checkouts to preview the configurations.`);
 
   step('Creating the databases');
-  const ids = { identity: d1Create(a.dir, `triodian-identity-${a.code}`) };
-  for (const app of apps) ids[app.id] = d1Create(a.dir, `${app.worker}-${a.code}`);
+  const hint = LOCATION_HINT[a.jurisdiction || 'AU'];
+  if (hint) say(`  location hint ${hint}: a preference for where D1 places each database, not a guarantee; check each database's location in the Cloudflare dashboard afterwards (docs/security-answers.md)`);
+  const ids = { identity: d1Create(a.dir, `triodian-identity-${a.code}`, hint) };
+  for (const app of apps) ids[app.id] = d1Create(a.dir, `${app.worker}-${a.code}`, hint);
 
   step('Writing each app’s configuration');
   const made = apps.map(app => clientConfig(app, a, ids));
@@ -126,4 +138,6 @@ async function main() {
   for (const m of made) say(`  https://${m.host}`);
   say('People are added once for the suite; give each their roles app by app. Email notifications are off until NOTIFY_SENDING and NOTIFY_FROM are set.');
 }
-if (import.meta.url === `file://${process.argv[1]}`) main().catch(e => { console.error('\n' + e.message); process.exit(1); });
+// Run main() only when this file is the script invoked, not when test-install.mjs imports it. Compared as file URLs, so it
+// holds on Windows too, where process.argv[1] is C:\... and import.meta.url is file:///C:/... (security review 15 Nov 2026, S.8).
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) main().catch(e => { console.error('\n' + e.message); process.exit(1); });
