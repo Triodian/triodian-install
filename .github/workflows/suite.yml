@@ -17,12 +17,23 @@ permissions:
 jobs:
   suite:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # branch: each app at the branch of the same name, else main (what is being developed).
+        # release: each app at the commit pinned in releases.json (what a client install gets; security review 15 Nov 2026, S.8).
+        source: [branch, release]
+    name: suite (${{ matrix.source }})
     steps:
       - uses: actions/checkout@v4
         with: { path: triodian-install }
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
+      - name: Fetch the apps at the pinned releases
+        if: matrix.source == 'release'
+        run: node triodian-install/tools/fetch-releases.mjs . && for d in risk_appetite use-assessment confidentiality-exposure-assessment board-direction; do (cd "$d/tests/e2e" && npm ci --no-audit --no-fund); done && git clone --quiet --depth 1 https://github.com/Triodian/Triodian_Metamodel.git triodian_metamodel
       - name: Fetch the apps
+        if: matrix.source == 'branch'
         env:
           # The app repos are public, so no token is needed. SUITE_READ_TOKEN is used only if set, for a fork that tests
           # private copies of the apps (a fine-grained token with read-only Contents access to them).
@@ -59,4 +70,4 @@ jobs:
       - name: Keep the chain test's report when it fails
         if: failure()
         uses: actions/upload-artifact@v4
-        with: { name: chain-test-results, path: triodian-install/suite/chain/test-results, retention-days: 14 }
+        with: { name: 'chain-test-results-${{ matrix.source }}', path: triodian-install/suite/chain/test-results, retention-days: 14 }
