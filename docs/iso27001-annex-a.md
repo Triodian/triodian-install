@@ -1,6 +1,6 @@
 # ISO/IEC 27001:2022 Annex A control statement
 
-**Draft · as at 13 November 2026 · Triodian Pty Ltd (ABN 34 703 647 750), Brisbane**
+**As at 15 November 2026 · Triodian Pty Ltd (ABN 34 703 647 750), Brisbane**
 
 Triodian does not hold an ISO/IEC 27001 certificate. This statement lists every control in Annex A of ISO/IEC 27001:2022
 and says where Triodian stands on it today, so a client can read it against its own supplier review. It sits beside the
@@ -41,7 +41,7 @@ titles of ISO/IEC 27001:2022 Annex A; read the control text in a licensed copy o
 | 5.17 | Authentication information | Implemented | No passwords on a client deployment: sign-in is a one-time code sent by Cloudflare Access to the person’s email. Sessions last 12 hours. |
 | 5.18 | Access rights | Implemented | Roles are given per engagement by an administrator and can be removed at any time; the audit log records each change. |
 | 5.19 | Information security in supplier relationships | Partial | Suppliers are named in section 7 (Cloudflare, GitHub). No written supplier security procedure. |
-| 5.20 | Addressing information security within supplier agreements | Partial | *To confirm.* Cloudflare and GitHub are used on their standard terms. Terms with clients are for counsel (section 11). |
+| 5.20 | Addressing information security within supplier agreements | Partial | *To confirm.* Cloudflare and GitHub are used on their standard terms. Terms with clients are set in each client agreement (section 11). |
 | 5.21 | Managing information security in the ICT supply chain | Partial | Dependencies are few, pinned and watched by Dependabot; the apps load no third-party scripts or fonts. No software bill of materials is published. |
 | 5.22 | Monitoring, review and change management of supplier services | Partial | *To confirm.* Cloudflare and GitHub status and changes are followed informally. No recorded supplier review. |
 | 5.23 | Information security for use of cloud services | Partial | The use of Cloudflare is described in sections 3 to 7, including the data-location limits. No written cloud exit test yet; the code is built to move (section 10). |
@@ -52,13 +52,13 @@ titles of ISO/IEC 27001:2022 Annex A; read the control text in a licensed copy o
 | 5.28 | Collection of evidence | Partial | The audit log and engagement history are append-only and stamped by the server. No procedure for preserving evidence outside the apps. |
 | 5.29 | Information security during disruption | Partial | The code is open source and each engagement exports as JSON, so work can continue elsewhere. No written continuity plan for Triodian itself. |
 | 5.30 | ICT readiness for business continuity | Partial | Workers and D1 run on Cloudflare’s network. Backups and point-in-time restore are not yet set and tested for client deployments (section 10). |
-| 5.31 | Legal, statutory, regulatory and contractual requirements | Partial | Each client’s obligations are for the client and its counsel. Triodian’s own obligations (privacy, contract) are with counsel for review. |
+| 5.31 | Legal, statutory, regulatory and contractual requirements | Partial | Each client’s obligations are for the client and its counsel. Triodian’s own obligations (privacy, contract) are set out in the privacy notice and each client agreement. |
 | 5.32 | Intellectual property rights | Implemented | All code is under the Apache License 2.0 with a NOTICE file; third-party licences are kept with the code; the Triodian name and logo are trademarks. |
-| 5.33 | Protection of records | Partial | Engagement records are versioned and kept in the database; retention and disposal are set per engagement (development plan task ISO.9). No Triodian records schedule yet. |
-| 5.34 | Privacy and protection of PII | Partial | The apps hold names, work emails, roles and, in AI Board Direction, directors’ briefing answers; see `docs/privacy.md`. No member, customer or client personal information is held. Counsel’s review of the notice is pending. |
+| 5.33 | Protection of records | Partial | Engagement records are versioned and kept in the database; retention and disposal are set per engagement. No Triodian records schedule yet. |
+| 5.34 | Privacy and protection of PII | Partial | The apps hold names, work emails, roles and, in AI Board Direction, directors’ briefing answers; see `docs/privacy.md`. No member, customer or client personal information is held. |
 | 5.35 | Independent review of information security | Partial | No independent review yet. A client may run its own penetration test against a test deployment (section 8). |
 | 5.36 | Compliance with policies, rules and standards for information security | Partial | *To confirm.* The automated tests check the apps against their own rules on every change. No compliance review of Triodian’s own practices. |
-| 5.37 | Documented operating procedures | Implemented | Installation, upgrade, archive and destroy are documented in this repository and were followed end to end (development plan task 4.4). |
+| 5.37 | Documented operating procedures | Implemented | Installation, upgrade, archive and destroy are documented in this repository and were followed end to end. |
 
 ## 6 People controls
 
@@ -69,7 +69,7 @@ titles of ISO/IEC 27001:2022 Annex A; read the control text in a licensed copy o
 | 6.3 | Information security awareness, education and training | Partial | *To confirm.* No recorded security training. |
 | 6.4 | Disciplinary process | Partial | *To confirm.* No written disciplinary process for security breaches. |
 | 6.5 | Responsibilities after termination or change of employment | Partial | *To confirm.* Access is removed when a person leaves; no written procedure. |
-| 6.6 | Confidentiality or non-disclosure agreements | Partial | *To confirm.* Confidentiality agreements with clients and partners are for counsel; not checked for this statement. |
+| 6.6 | Confidentiality or non-disclosure agreements | Partial | *To confirm.* Confidentiality agreements with clients and partners sit in the client and partner agreements; not checked for this statement. |
 | 6.7 | Remote working | Partial | *To confirm.* Triodian’s people work remotely. No written remote-working rules. |
 | 6.8 | Information security event reporting | Implemented | Each repository’s SECURITY.md gives the private reporting route; incidents on a client deployment go to info@triodian.com. |
 
@@ -105,7 +105,7 @@ titles of ISO/IEC 27001:2022 Annex A; read the control text in a licensed copy o
 | 8.7 | Protection against malware | Partial | *To confirm.* No written malware protection standard for administrators’ devices. The apps accept no file uploads other than a small PNG logo and JSON or CSV read in the browser. |
 | 8.8 | Management of technical vulnerabilities | Partial | Dependabot, secret scanning with push protection, and private vulnerability reporting. No independent penetration test yet. |
 | 8.9 | Configuration management | Implemented | Each Worker’s configuration is in its repository (`wrangler.jsonc`) and a deployment is created by the installer, so it can be rebuilt and compared. |
-| 8.10 | Information deletion | Partial | The runbook archives and destroys a client deployment. Retention period and disposition per engagement are recorded in set-up (development plan task ISO.9). |
+| 8.10 | Information deletion | Partial | The runbook archives and destroys a client deployment. Retention period and disposition per engagement are recorded in set-up. |
 | 8.11 | Data masking | Not applicable | The apps hold no member, customer or client personal information to mask. Worked examples use fictional data. |
 | 8.12 | Data leakage prevention | Partial | The apps hold conclusions about AI arrangements, not the client’s documents or data, but AI Use Assessment’s register is commercially sensitive. Exports are made by a named user and logged. Nothing limits what an export is used for once it leaves the app. |
 | 8.13 | Information backup | Partial | Not yet set and tested for client deployments (section 10). |

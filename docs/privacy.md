@@ -1,6 +1,6 @@
 # Privacy notice for the Triodian apps
 
-**Draft for counsel's review · as at 13 November 2026 · Triodian Pty Ltd (ABN 34 703 647 750), Brisbane**
+**As at 15 November 2026 · Triodian Pty Ltd (ABN 34 703 647 750), Brisbane**
 
 This notice covers the Triodian apps: AI Board Direction, AI Risk Appetite, AI Use Assessment, AI Confidentiality
 Exposure Assessment, Triodian Start and the AI Obligations Atlas. The Triodian website has its own notice at
@@ -73,4 +73,4 @@ To see, correct or remove what an app holds about you:
 If you are not satisfied with Triodian's answer, you may complain to the Office of the Australian Information
 Commissioner.
 
-> This notice describes what the software holds. It is a draft for counsel's review and is not legal advice.
+> This notice describes what the software holds. It is not legal advice.

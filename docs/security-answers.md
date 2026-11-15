@@ -1,6 +1,6 @@
 # Security answers for a client's provider review
 
-**Draft for counsel's review · as at 13 November 2026 · Triodian Pty Ltd (ABN 34 703 647 750), Brisbane**
+**As at 15 November 2026 · Triodian Pty Ltd (ABN 34 703 647 750), Brisbane**
 
 A regulated client that uses the Triodian AI governance apps will review Triodian as a service provider, under its
 operational risk and information security obligations (for an APRA-regulated entity, CPS 230 and CPS 234). This page
@@ -171,9 +171,8 @@ every Annex A control and where Triodian stands on it, and the [privacy notice f
 | Independent penetration test | Not started by Triodian. A client may run its own against a test deployment, with a written scope and a remediation window (section 8) |
 | ISO/IEC 27001 certification | Not held. An Annex A control statement is published; rows about Triodian as a company are waiting on confirmation |
 | Triodian's own ISO/IEC 42001 position | [Position statement](iso42001-position.md), clause by clause and control by control; not certified today |
-| Privacy notice for the apps | Drafted (`privacy.md`); for counsel |
-| Agreement terms: incident notice, audit and access rights, sub-contractors, data location, exit | For counsel |
-| Counsel's review of this page | Waiting |
+| Privacy notice for the apps | Published ([privacy.md](privacy.md)) |
+| Agreement terms: incident notice, audit and access rights, sub-contractors, data location, exit | Set in each client agreement |
 
 > These answers describe the software and how it is run. They are not legal advice and do not say whether any
 > obligation is met; that is for the client and its counsel.
