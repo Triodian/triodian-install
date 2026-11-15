@@ -2,6 +2,9 @@
 # database, on every push here and once a day, using each app's branch of the same name, or main. No secrets.
 # Then the chain test (gate G2): one regulated worked example through Board Direction, Risk Appetite and Use Assessment
 # with their real service bindings (suite/chain).
+# Two runs: "branches" tests each app's branch of the same name (or main); "release" tests the exact commits pinned in
+# releases.json, which is what install.mjs gives a client (security review 15 Nov 2026, S.8). Moving a pin forward
+# without this run passing is not a release.
 name: Suite test
 on:
   push:
@@ -17,6 +20,11 @@ permissions:
 jobs:
   suite:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [branches, release]
+    name: suite (${{ matrix.mode }})
     steps:
       - uses: actions/checkout@v4
         with: { path: triodian-install }
@@ -31,11 +39,20 @@ jobs:
           # The branch asked for, else this branch's name (so a change across the apps on one branch name is tested
           # together), else main. An app without that branch is tested at main.
           REF="${{ github.event.inputs.ref || github.head_ref || github.ref_name || 'main' }}"
+          MODE="${{ matrix.mode }}"
           AUTH=()
           if [ -n "$TOKEN" ]; then AUTH=(-c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)"); fi
           for r in risk_appetite use-assessment Confidentiality-Exposure-Assessment board-direction; do
             d=$(echo "$r" | tr 'A-Z' 'a-z')
-            if ! git "${AUTH[@]}" clone --quiet --depth 1 --branch "$REF" "https://github.com/Triodian/$r.git" "$d" 2>/dev/null; then
+            if [ "$MODE" = release ]; then
+              # The commit install.mjs would fetch for a client (releases.json), by the installer's own app ids.
+              PIN=$(node -e "const r=require('./triodian-install/releases.json').apps; const id={risk_appetite:'risk-appetite','use-assessment':'use-assessment','Confidentiality-Exposure-Assessment':'confidentiality','board-direction':'board-direction'}['$r']; console.log(r[id].ref)")
+              echo "$r at pinned release $PIN"
+              git init --quiet "$d" && git -C "$d" remote add origin "https://github.com/Triodian/$r.git"
+              if ! git -C "$d" "${AUTH[@]}" fetch --quiet --depth 1 origin "$PIN" || ! git -C "$d" checkout --quiet --detach FETCH_HEAD; then
+                echo "::error::Could not fetch Triodian/$r at the release pinned in releases.json ($PIN)."; exit 1
+              fi
+            elif ! git "${AUTH[@]}" clone --quiet --depth 1 --branch "$REF" "https://github.com/Triodian/$r.git" "$d" 2>/dev/null; then
               if ! GIT_TERMINAL_PROMPT=0 git "${AUTH[@]}" clone --quiet --depth 1 "https://github.com/Triodian/$r.git" "$d"; then
                 echo "::error::Could not fetch Triodian/$r. If the app repos are private, add a SUITE_READ_TOKEN secret with read-only Contents access to them."
                 exit 1

@@ -8,7 +8,8 @@
 //   CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... node install.mjs
 //   node install.mjs --dry-run            prints every step and writes the configurations, changes nothing in Cloudflare
 //   node install.mjs --answers file.json  takes the answers from a file instead of asking
-//   node install.mjs --latest             fetches each app's main instead of the release pinned in releases.json
+//   node install.mjs --latest             fetches each app's main instead of the release pinned in releases.json; refused
+//                                         for a client install (allowed with --dry-run, or for a code starting with "test")
 //
 // The API token needs: Account · D1 · Edit, Account · Workers Scripts · Edit, Zone · Workers Routes · Edit (on the
 // domain's zone), Account · Access: Apps and Policies · Edit. Node 20 or later, and git.
@@ -57,7 +58,16 @@ function run(cmd, argv, opts = {}) {
   if (DRY) return '';
   return execFileSync(cmd, argv, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'inherit'], ...opts });
 }
-const wrangler = (cwd, argv, input) => run('npx', ['--yes', 'wrangler@4', ...argv], { cwd, input });
+// Pinned to a minor so an install is reproducible; move it on purpose, with the releases (security review 15 Nov 2026, S.8).
+const WRANGLER = 'wrangler@4.40';
+const wrangler = (cwd, argv, input) => run('npx', ['--yes', WRANGLER, ...argv], { cwd, input });
+/** An existing checkout is used only if it really is the app's repository on github.com/Triodian; anything else is refused
+ *  rather than deployed to a client (security review 15 Nov 2026, S.8). */
+function checkOrigin(dir, repo) {
+  if (DRY) return;
+  const url = execFileSync('git', ['-C', dir, 'remote', 'get-url', 'origin'], { encoding: 'utf8' }).trim();
+  if (!new RegExp(`^(https://github\\.com/|git@github\\.com:)Triodian/${repo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\.git)?$`, 'i').test(url)) throw new Error(`${dir} is a checkout of ${url}, not of github.com/Triodian/${repo}. Point the folder at a fresh location or remove it.`);
+}
 async function cf(path, body) {
   say(`  → Cloudflare API ${body ? 'POST' : 'GET'} ${path}`);
   if (DRY) return { result: { aud: 'DRY-RUN-AUD' } };
@@ -103,9 +113,11 @@ async function main() {
 
   step('Fetching the apps');
   mkdirSync(a.dir, { recursive: true });
+  if (LATEST && !DRY && !/^test/.test(a.code)) throw new Error('--latest installs the head of main, not a tested release. It is for Triodian test codes (starting with "test") and dry runs; a client install takes the releases in releases.json.');
   for (const app of apps) {
     const dir = join(a.dir, app.dir), ref = LATEST ? null : (RELEASES[app.id] || {}).ref;
     if (!existsSync(join(dir, '.git'))) run('git', ['clone', '--depth', '1', `https://github.com/Triodian/${app.repo}.git`, dir]);
+    else checkOrigin(dir, app.repo);
     if (ref) { say(`  ${app.name}: release ${ref}`); run('git', ['-C', dir, 'fetch', '--depth', '1', 'origin', ref]); run('git', ['-C', dir, 'checkout', '--detach', 'FETCH_HEAD']); }
     else run('git', ['-C', dir, 'pull', '--ff-only']);
   }

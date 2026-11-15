@@ -2,9 +2,21 @@
   "note": "The release of each app that install.mjs fetches and deploys: a git tag or commit, so a client install is the same code every time and a later push to main does not change what a client runs (security review 15 Nov 2026, S.8). Move an app forward here deliberately, after its CI is green, and record the date. `node install.mjs --latest` ignores this file and takes each repo's main.",
   "pinned_on": "2026-11-15",
   "apps": {
-    "risk-appetite": { "ref": "47d5665bff45baaaedda42a9c220106affd4fc45", "note": "main as at 15 Nov 2026, before the security review PR (#36)" },
-    "use-assessment": { "ref": "9a4a8032322fcd4a6946ceb0fd88cd5ce59bed0b", "note": "main as at 15 Nov 2026, before the security review PR (#35)" },
-    "confidentiality": { "ref": "3d37056cbbbf70473b8b3df2abb055f2bf9c42da", "note": "main as at 15 Nov 2026, before the security review PR (#26)" },
-    "board-direction": { "ref": "d4914d8bf4803da14d240a6067919cd8f9652964", "note": "main as at 15 Nov 2026, before the security review PR (#50)" }
+    "risk-appetite": {
+      "ref": "4e4e090d000c0b4f7f5c383cb76c687e083cc4d5",
+      "note": "main as at 15 Nov 2026 (evening), with the security review PR #36 merged: S.2 gated deploy, S.3 email lock, S.4 bootstrap"
+    },
+    "use-assessment": {
+      "ref": "f8dd54f33d6686a67c9b31561e32a1399fe76a7d",
+      "note": "main as at 15 Nov 2026 (evening), with the security review PR #35 merged: S.2 gated deploy, S.3 email lock, S.4 bootstrap, S.1 blind-review redaction, S.5 first-save checks, S.6 brief provenance"
+    },
+    "confidentiality": {
+      "ref": "c5c975d014293f8bffda69f0017ce3b4e3f8c5dc",
+      "note": "main as at 15 Nov 2026 (evening), with the security review PR #26 merged: S.2 gated deploy, S.3 email lock, S.4 bootstrap, S.1 blind-review redaction, S.5 first-save checks"
+    },
+    "board-direction": {
+      "ref": "4a89c5c867ef8d9503b470eb9877e0dd36396bb0",
+      "note": "main as at 15 Nov 2026 (evening), with the security review PR #50 merged: S.2 gated deploy, S.3 email lock, S.4 bootstrap, S.6 brief provenance"
+    }
   }
 }

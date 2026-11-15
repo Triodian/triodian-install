@@ -170,7 +170,7 @@ every Annex A control and where Triodian stands on it, and the [privacy notice f
 | Location hint in `install.mjs` (from the jurisdiction, `oc` for Australia), and a check of each database's location after installation | Hint added 15 Nov 2026; the check after installation is a step in the runbook. Residency itself is not guaranteed on D1 (section 3) |
 | Content-Security-Policy header on every app | Not started |
 | Findings of the 15 November 2026 security review: blind-review disclosure, cross-app email change, bootstrap list, first-save checks, deploy gated on CI | Fixed in the apps' security-review-15nov pull requests (use-assessment #35, Confidentiality-Exposure-Assessment #26, risk_appetite #36, board-direction #50); each fix has a test that failed before it |
-| Releases pinned: each client install fetches the release named in `releases.json`, not the head of main | Done 15 Nov 2026 |
+| Releases pinned: each client install fetches the release named in `releases.json`, not the head of main; the suite workflow tests that exact manifest on every change | Done 15 Nov 2026; moved to the releases that carry the security review fixes the same evening |
 | Single sign-on with the client's identity provider | Not started |
 | Backups and point-in-time restore for client deployments, with a tested restore | Procedure written ([restore.md](restore.md), 15 Nov 2026); not yet exercised |
 | Audit log export to the client's SIEM | Not started |

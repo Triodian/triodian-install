@@ -43,7 +43,9 @@ else the baseline itself (payments). With a jurisdiction and no sector, it start
 There is no currency setting: amounts are written in each engagement in the client's own terms. It then:
 
 1. fetches each app from GitHub at the release pinned in `releases.json` (a commit or tag per app, moved forward on
-   purpose; `--latest` takes each repo's main instead);
+   purpose once the suite workflow's `release` run has passed against it; `--latest` takes each repo's main instead and
+   is refused for a client code). An existing checkout is used only if its origin is the app's repository on
+   github.com/Triodian;
 2. creates each app's database and the shared identity database, with a D1 location hint from the jurisdiction (`oc`
    for Australia): a placement preference, not a residency guarantee, see `docs/security-answers.md` section 3;
 3. writes each app's configuration (`wrangler.<code>.json`, beside its `wrangler.jsonc`), with the demo off;
