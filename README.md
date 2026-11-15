@@ -30,12 +30,17 @@ API token with:
 CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... node install.mjs
 ```
 
-It asks for a short client code, the client's **jurisdiction** (Australia or Singapore) and **regulated sector** (for
-example banking, insurance, superannuation, health or critical infrastructure, or none), whether the client is a
+It asks for a short client code, the client's **jurisdiction** (Australia, Singapore or the United States) and **regulated
+sector** (for example banking, insurance, superannuation, securities, health or critical infrastructure, or none), whether the client is a
 **general company** (AI Board Direction and AI Confidentiality Exposure Assessment) or a **regulated entity** (all four;
 the default when the sector is financially regulated), the domain, the Zero Trust team domain and the first
 administrator's email. The jurisdiction and regulated sector are where each app starts (`DEFAULT_JURISDICTION`,
-`DEFAULT_SECTOR`); people change both in the apps at any time. The sectors are the Triodian Metamodel's list. It then:
+`DEFAULT_SECTOR`); people change both in the apps at any time. The sectors are the Triodian Metamodel's list. A new
+engagement in each app starts on the sector's pack: the jurisdiction's own pack where there is one (an Australian
+superannuation trustee, a Singapore bank), else the jurisdiction's overlay on the sector's best-practice baseline (each
+United States main sector: banking, insurance, securities and investment advice, health care, critical infrastructure),
+else the baseline itself (payments). With a jurisdiction and no sector, it starts on that jurisdiction's first pack.
+There is no currency setting: amounts are written in each engagement in the client's own terms. It then:
 
 1. fetches each app from GitHub;
 2. creates each app's database and the shared identity database;
@@ -52,7 +57,12 @@ administrator's email. The jurisdiction and regulated sector are where each app 
   "domain": "acme.com.au", "teamDomain": "acme.cloudflareaccess.com", "firstAdmins": ["gc@acme.com.au"], "dir": "./triodian-acme" }
 ```
 
-`sector` is one of the ids in `lib-config.mjs`, or empty.
+`sector` is one of the ids in `lib-config.mjs`, or empty. A United States bank, for example:
+
+```json
+{ "code": "harlow", "jurisdiction": "US", "sector": "US-BANKING", "profile": "regulated",
+  "domain": "harlowridge.example", "teamDomain": "harlow.cloudflareaccess.com", "firstAdmins": ["gc@harlowridge.example"], "dir": "./triodian-harlow" }
+```
 
 ## Security answers for a client's review
 

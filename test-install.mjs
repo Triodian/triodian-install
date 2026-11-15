@@ -25,4 +25,21 @@ const bd = join(a.dir, 'board-direction', 'public', 'bd-content.json');
 const theirs = existsSync(bd) ? JSON.parse(readFileSync(bd, 'utf8')).regulatedSectors : null;
 if (theirs) ok('the sectors match AI Board Direction’s copy of the Metamodel list', JSON.stringify(theirs.map(d => [d.id, d.name, d.financiallyRegulated])) === JSON.stringify(SECTORS.map(d => [d.id, d.name, d.financiallyRegulated])));
 else console.log('SKIP · AI Board Direction has no regulated sectors yet (board-direction #26)');
+// US.6: a United States client, and the pack each sector the installer offers starts on in the apps that have packs.
+for (const app of APPS) {
+  const v = clientConfig(app, { ...a, jurisdiction: 'US', sector: 'US-BANKING' }, ids).config.vars;
+  ok(`${app.name}: a US bank starts in the United States, banking`, v.DEFAULT_JURISDICTION === 'US' && v.DEFAULT_SECTOR === 'US-BANKING');
+}
+for (const [repo, file, global] of [['risk_appetite', 'content.js', 'RAF_CONTENT'], ['use-assessment', 'aua-content.js', 'AUA_CONTENT']]) {
+  const f = join(a.dir, repo, 'public', file), pk = join(a.dir, repo, 'public', 'shared', 'packs.js');
+  if (!existsSync(f) || !existsSync(pk)) { console.log(`SKIP · ${repo} is not checked out beside this repo`); continue; }
+  globalThis.window = {}; new Function('window', readFileSync(f, 'utf8'))(globalThis.window);
+  const B = globalThis.window[global], P = {}; new Function('globalThis', 'module', readFileSync(pk, 'utf8'))(P, undefined);
+  const T = P.TriodianPacks;
+  if (!T || !T.startPack || !B.regulatedSectors) { console.log(`SKIP · ${repo} does not choose a pack from the install's sector yet (risk_appetite #35, use-assessment #34)`); continue; }
+  const bad = SECTORS.map(d => [d.id, T.startPack(B, { jurisdiction: d.jurisdiction, sector: d.id })]).filter(([id, p]) => { const q = B.packs[p]; return !q || !(q.jurisdiction === id.slice(0, 2) || q.jurisdiction === 'any'); });
+  ok(`${repo}: every sector the installer offers starts on a pack of its jurisdiction or a baseline`, !bad.length, bad.map(x => x.join(' → ')).join(', '));
+  const us = ['US-BANKING', 'US-INSURANCE', 'US-SECURITIES', 'US-HEALTH', 'US-CRITICAL-INFRASTRUCTURE'].map(s => T.startPack(B, { jurisdiction: 'US', sector: s }));
+  ok(`${repo}: each US main sector starts on its US overlay pack`, us.join() === 'usBanking,usInsurance,usSecurities,usHealth,usCriticalInfrastructure', us.join());
+}
 console.log(fails ? `\n${fails} failed` : '\nAll passed'); process.exit(fails ? 1 : 0);
