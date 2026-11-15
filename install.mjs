@@ -57,7 +57,9 @@ function run(cmd, argv, opts = {}) {
   if (DRY) return '';
   return execFileSync(cmd, argv, { encoding: 'utf8', stdio: ['pipe', 'pipe', 'inherit'], ...opts });
 }
-const wrangler = (cwd, argv, input) => run('npx', ['--yes', 'wrangler@4', ...argv], { cwd, input });
+// Wrangler is pinned to a minor so an install made today and one made next month run the same tooling; move it on purpose.
+const WRANGLER = 'wrangler@4.40';
+const wrangler = (cwd, argv, input) => run('npx', ['--yes', WRANGLER, ...argv], { cwd, input });
 async function cf(path, body) {
   say(`  → Cloudflare API ${body ? 'POST' : 'GET'} ${path}`);
   if (DRY) return { result: { aud: 'DRY-RUN-AUD' } };
@@ -101,11 +103,18 @@ async function main() {
   const sec = SECTORS.find(d => d.id === a.sector);
   say(`\nInstalling ${apps.map(x => x.name).join(', ')} for ${a.code}, under ${a.domain}, starting in ${(JURISDICTIONS.find(j => j[0] === (a.jurisdiction || 'AU')) || [])[1]}${sec ? `, ${sec.name}` : ''}.${DRY ? ' (dry run: nothing is changed in Cloudflare)' : ''}`);
 
+  if (LATEST && !DRY) say('\n  --latest: fetching each app\'s main instead of the release pinned in releases.json. This is for Triodian\'s own test sites; a client install should take the pinned release.');
   step('Fetching the apps');
   mkdirSync(a.dir, { recursive: true });
   for (const app of apps) {
     const dir = join(a.dir, app.dir), ref = LATEST ? null : (RELEASES[app.id] || {}).ref;
-    if (!existsSync(join(dir, '.git'))) run('git', ['clone', '--depth', '1', `https://github.com/Triodian/${app.repo}.git`, dir]);
+    const url = `https://github.com/Triodian/${app.repo}.git`;
+    if (!existsSync(join(dir, '.git'))) run('git', ['clone', '--depth', '1', url, dir]);
+    else if (!DRY) {
+      // An existing folder is used only if it really is a checkout of this app from Triodian's GitHub.
+      const origin = run('git', ['-C', dir, 'remote', 'get-url', 'origin']).trim().replace(/\.git$/, '').toLowerCase();
+      if (origin !== url.replace(/\.git$/, '').toLowerCase()) throw new Error(`${dir} is a checkout of ${origin || 'something else'}, not of ${url}. Move it aside or point the installer at an empty folder.`);
+    }
     if (ref) { say(`  ${app.name}: release ${ref}`); run('git', ['-C', dir, 'fetch', '--depth', '1', 'origin', ref]); run('git', ['-C', dir, 'checkout', '--detach', 'FETCH_HEAD']); }
     else run('git', ['-C', dir, 'pull', '--ff-only']);
   }
