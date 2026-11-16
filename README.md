@@ -101,7 +101,7 @@ and the board approves the appetite; Use Assessment imports Coastline's own prov
 refusing two malformed rows), runs in Lite scope over the six arrangements behind critical operations, loads the
 calibration set and issues the in-use feed; Risk Appetite loads the feed on decision 8; the chair takes the board view,
 which must match the approved calibration set; and Board Direction gathers the APRA letter evidence index, where Use
-Assessment's artefacts say they cover the Lite scope. Set `CHAIN_OUT` to a folder to keep the index as Markdown. Every file that crosses a link is checked against its published schema in Triodian_Metamodel `exchange/` (checked out beside the apps).
+Assessment's artefacts say they cover the Lite scope. Step 8 (AI Incident Accountability, Shape A; development plan A.7): the register's incident-readiness columns land on the entries, the Incident readiness record DL11 lists the jurisdiction's notification clocks (each per the Atlas as at a stated date, for counsel to confirm) and the gaps with owners, an exercise re-setting the 13 November 2026 facts in the client's chain is recorded as a validation event and comes out as the VE record, and both reach Board Direction's evidence index; the step skips against a Use Assessment that predates use-assessment #45, as the pinned release does until `releases.json` moves. Set `CHAIN_OUT` to a folder to keep the index and the three incident outputs as Markdown. Every file that crosses a link is checked against its published schema in Triodian_Metamodel `exchange/` (checked out beside the apps).
 
 Each app runs in its own `wrangler dev` session; Wrangler's local dev registry connects their bindings as Cloudflare
 does. No secrets and no Cloudflare account. With the app repos checked out beside this one:
@@ -112,7 +112,7 @@ CHAIN_CASE=harlow npx playwright test
 ```
 
 The first run is Coastline Super, a fictional superannuation trustee in Australia. The second is Harlow Ridge Bank, a
-fictional New York bank on the US bank packs (development plan US.5): the same seven steps, with the bank's own provider
+fictional New York bank on the US bank packs (development plan US.5): the same eight steps, with the bank's own provider
 register (`fixtures/harlow-ridge-provider-register.csv`) and the evidence index by the bank's regime (SR 26-2 / OCC
 2026-13 and the 2023 interagency third-party guidance) instead of the APRA letter. Each run needs its own storage, so
 they are two invocations. The suite workflow runs both after the suite test.
