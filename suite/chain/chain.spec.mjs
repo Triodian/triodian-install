@@ -81,7 +81,11 @@ test('1 · Board Direction: the chair records the board directions', async ({ br
       B8: { owners: { AC3: 'The CEO' }, proposedBy: ch },
     },
     questions: [], resolution: {}, people: [], versions: [], previous: null, history: [] };
-  const put = await api('bd', 'PUT', '/api/engagement', { revision: 0, data });
+  // The first save is set-up only (security review 15 Nov 2026, S.5: a first save carrying positions is refused); the
+  // positions the chair proposed are then recorded by the Triodian recorder, as in a real engagement.
+  const setup = await api('bd', 'PUT', '/api/engagement', { revision: 0, data: { ...data, positions: {} } });
+  expect(setup.status, JSON.stringify(setup.body)).toBe(200);
+  const put = await api('bd', 'PUT', '/api/engagement', { revision: setup.body.revision || 1, data: { ...data, history: [{ at: new Date().toISOString(), by: ids['bd:recorder'], action: 'record', target: 'positions', from: null, to: 'proposed by the chair' }] } }, P.recorder);
   expect(put.status, JSON.stringify(put.body)).toBe(200);
   expect((await api('bd', 'GET', '/api/board-directions')).status).toBe(404); // not served before the chair records them
 
