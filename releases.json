@@ -11,8 +11,8 @@
       "note": "main as at 16 Nov 2026 12:10, with the PT-03 redirect fix and the Access token nbf check merged; the commit deployed live through the gated workflow (development plan P.3)."
     },
     "confidentiality": {
-      "ref": "a87c95490d86378912b82d862a3478f2a0238077",
-      "note": "main as at 16 Nov 2026 12:45, with the PT-03 redirect fix, the Access token nbf check and the PT-05 destruction fix merged; the commit deployed live through the gated workflow (development plan P.3, P.5) and the one the penetration retest of 16 Nov exercised (P.10)."
+      "ref": "28730c26ecd67eeb90dca6a4ce7b19ea696f4c43",
+      "note": "main as at 16 Nov 2026 14:21, with the PT-03 redirect fix, the Access token nbf check, the PT-05 destruction fix and the retest R-03 atomic destruction (#33) merged; deployed live through the gated workflow, run 43803562707 (development plan P.3, P.5, P.13)."
     },
     "board-direction": {
       "ref": "bbdaa2a2d8334455ca45327457bb6523f3fe0d92",
