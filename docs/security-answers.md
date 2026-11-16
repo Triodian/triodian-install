@@ -98,8 +98,14 @@ every Annex A control and where Triodian stands on it, and the [privacy notice f
 
 ## 5. Access and identity
 
-- **Sign-in:** Cloudflare Access sends a one-time PIN to the person's email address. Access protects only the sign-in
-  step (`/auth/email`); the app then issues its own session.
+- **Sign-in:** Cloudflare Access proves the person's email address, by a one-time code to that address or, where the
+  installer was given the organisation's identity provider (Entra ID, Google Workspace, Okta or any OpenID Connect or
+  SAML provider federated in Access), through that provider alone, so its multi-factor authentication and offboarding
+  apply. Access protects only the sign-in step (`/auth/email`); the app then issues its own session. On a host Access
+  does not cover, the app is its own OpenID Connect relying party to the same providers (`IDENTITY_PROVIDER=oidc`). The
+  provider supplies the email and nothing else: no role is read from it, and no provider claim can make anyone an
+  administrator. The provider sees sign-ins, not engagement content. Set-up:
+  [Sign-in and SSO](https://docs.triodian.com/guides/deploying/sign-in-and-sso).
 - **Sessions:** a session cookie lasting 12 hours, marked `HttpOnly`, `Secure` and `SameSite=Lax`. Signing in to one
   app signs the person in to the others on the same domain, and signing out of one signs out of all.
 - **Who may use an app:** only active users an administrator has added. Anyone else who signs in is listed as waiting
@@ -108,7 +114,6 @@ every Annex A control and where Triodian stands on it, and the [privacy notice f
   that changes anything outside the person's role is refused and logged.
 - **Separation of duties:** built into the method. For example, the chair alone records the board's resolution,
   counsel alone answers counsel questions, and a peer reviewer cannot review their own classification.
-- **Gap:** single sign-on with the client's identity provider (such as Microsoft Entra ID) is not yet built.
 
 ## 6. Logging and monitoring
 
@@ -171,7 +176,7 @@ every Annex A control and where Triodian stands on it, and the [privacy notice f
 | Content-Security-Policy header on every app | Not started |
 | Findings of the 15 November 2026 security review: blind-review disclosure, cross-app email change, bootstrap list, first-save checks, deploy gated on CI | Fixed in the apps' security-review-15nov pull requests (use-assessment #35, Confidentiality-Exposure-Assessment #26, risk_appetite #36, board-direction #50); each fix has a test that failed before it |
 | Releases pinned: each client install fetches the release named in `releases.json`, not the head of main | Done 15 Nov 2026. The 16 Nov penetration test showed the 15 Nov pins of Risk Appetite and Board Direction accepted a first save carrying another person's approval, which their mains already refused; the pins were moved to the commits deployed on 16 Nov, and `tools/release-checks.mjs` now runs the forged payloads against the pins in CI, so a pin can no longer name a release that accepts them |
-| Single sign-on with the client's identity provider | Not started |
+| Single sign-on with the client's identity provider | Built 16 Nov 2026: the installer federates the organisation's provider in Cloudflare Access (one answer, the login method's id), and the apps carry an OpenID Connect relying party for a host Access does not cover, with its token checks tested against a stub provider. Not yet exercised against a client's real tenant; the first such sign-in is recorded here when it is |
 | Backups and point-in-time restore for client deployments, with a tested restore | Procedure written ([restore.md](restore.md), 15 Nov 2026); not yet exercised |
 | Audit log export to the client's SIEM | Not started |
 | Independent penetration test | A targeted test was run on 16 Nov 2026: 47 low-volume anonymous probes of the six live hosts and local exploit testing of the public source against real SQLite. It found no unauthenticated compromise and seven application findings, all with reproductions, being fixed under the development plan's P rows. It did not cover authenticated role or tenant testing, browser-level XSS and CSRF, concurrency, infrastructure, dependencies or backups; an authenticated test on the staging sites follows. A client may still run its own against a test deployment, with a written scope and a remediation window (section 8) |
