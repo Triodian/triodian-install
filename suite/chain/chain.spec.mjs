@@ -46,6 +46,9 @@ async function open(browser, k, as, path = '/', example = false) {
   await p.goto(base(k) + path); await p.waitForTimeout(800);
   return { ctx, p };
 }
+// Risk Appetite loads the engagement after the first paint; a step that reads window.RAF.state straight away saw null
+// on a slow runner (the second chain run of 16 Nov). Wait for the engagement to be in the page.
+const ready = p => p.waitForFunction(() => !!(window.RAF && window.RAF.state), null, { timeout: 30_000 });
 const stored = async k => (await api(k, 'GET', '/api/engagement')).body;
 const saved = async (k, test) => expect.poll(async () => { const s = await stored(k); return !!(s && s.exists && test(s.data)); }, { timeout: 20_000 }).toBe(true);
 
@@ -144,7 +147,7 @@ test('2 · Risk Appetite: the directions load over the binding, show on decision
   expect(a.p._errors).toEqual([]);
   await a.ctx.close();
 
-  const { ctx, p } = await open(browser, 'ra', P.cro, '/#d1');
+  const { ctx, p } = await open(browser, 'ra', P.cro, '/#d1'); await ready(p);
   await p.evaluate(() => window.RAF.go('d1'));
   await expect(p.locator('body')).toContainText('The board’s directions for this decision · BD1, BD2, BD3');
   await expect(p.locator('body')).toContainText(`${CAUTIOUS}: Cautious · up to A2 · ${CASE.condition}`);
@@ -168,7 +171,7 @@ test('2 · Risk Appetite: the directions load over the binding, show on decision
 });
 
 test('3 · Risk Appetite: the CRO agrees the working appetite and the board approves it', async ({ browser }) => {
-  const c = await open(browser, 'ra', P.cro);
+  const c = await open(browser, 'ra', P.cro); await ready(c.p);
   await c.p.evaluate(() => { // as agreeWorking() does
     const S = window.RAF.state, cro = S.people.find(p => (p.roles || []).includes('cro')), c = S.calibration, today = new Date().toLocaleDateString('en-CA');
     c.version = 1; c.status = 'working'; c.agreedBy = cro.name; c.agreedById = cro.id; c.agreedOn = today;
@@ -180,7 +183,7 @@ test('3 · Risk Appetite: the CRO agrees the working appetite and the board appr
   expect(c.p._errors).toEqual([]);
   await c.ctx.close();
 
-  const b = await open(browser, 'ra', P.board);
+  const b = await open(browser, 'ra', P.board); await ready(b.p);
   await b.p.evaluate(() => { // as recordApproval() does
     const c = window.RAF.state.calibration, date = '2026-12-02', minute = 'Board minute 2026/12-04', by = 'The Board';
     c.status = 'approved'; c.approvedOn = date; c.minuteRef = minute; c.approvedBy = by;
@@ -258,7 +261,7 @@ test('4 · Use Assessment: the client’s provider register is imported in Lite 
 });
 
 test('5 · Risk Appetite: decision 8 loads the in-use feed over the binding, without reopening the approved appetite', async ({ browser }) => {
-  const { ctx, p } = await open(browser, 'ra', P.cro);
+  const { ctx, p } = await open(browser, 'ra', P.cro); await ready(p);
   await p.evaluate(() => window.RAF.go('d8'));
   await expect(p.locator('body')).toContainText('In use now · no in-use feed loaded');
   await p.locator('summary', { hasText: 'In use now' }).click();
