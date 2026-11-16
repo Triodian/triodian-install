@@ -15,8 +15,8 @@
       "note": "main as at 16 Nov 2026 22:58 (UTC+10), with the SSO and platform seams (ID.1, ID.3) on top of the PT-05 and R-03 destruction fixes; live confidentiality.triodian.com answered /api/version with this commit at 23:08 (development plan ID.3, K.12)."
     },
     "board-direction": {
-      "ref": "aec6d5110545e4345e7f22f4cfdd3255312f65dc",
-      "note": "main as at 16 Nov 2026 22:58 (UTC+10), with US.6, US.7, ID.1 and ID.3; live board-direction.triodian.com answered /api/version with this commit at 23:00 (development plan ID.3, K.12). Board Direction #60 (the Shape A copies of the shared import.js and evidence.js) is not yet merged; move this pin after it is deployed."
+      "ref": "9fd22fdc4e5bdf9dc5f68b309d13cb71d9be48c2",
+      "note": "main as at 17 Nov 2026 09:05 (Brisbane), with #60 (the Shape A copies of the shared import.js and evidence.js, byte-identical with Use Assessment and Risk Appetite) on top of US.6, US.7, ID.1 and ID.3; deployed through the gated workflow, run 43974171109; live board-direction.triodian.com answered /api/version with this commit on 17 Nov 2026 (development plan K.11, K.12)."
     }
   }
 }
