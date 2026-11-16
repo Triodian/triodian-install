@@ -1,6 +1,8 @@
 // Gate G2 (development plan): one regulated worked example runs the whole chain. Coastline Super, a fictional
 // superannuation trustee in Australia, goes from AI Board Direction (connected mode) to AI Risk Appetite and AI Use
-// Assessment and back:
+// Assessment and back. The same seven steps run for Harlow Ridge Bank, a fictional New York bank on the US bank packs,
+// with CHAIN_CASE=harlow (development plan US.5; the Metamodel's docs/adding-a-jurisdiction.md, J.5): each run needs its
+// own storage, so the two cases are two invocations, not two files.
 //   1. Board Direction: the chair records the board directions BD1 to BD7
 //   2. Risk Appetite: set-up loads them over the BOARD binding; decision 1 shows them; K11 holds back a ceiling above BD1
 //   3. Risk Appetite: the CRO agrees the working appetite and the board approves it, which issues the calibration set
@@ -47,15 +49,42 @@ async function open(browser, k, as, path = '/', example = false) {
 const stored = async k => (await api(k, 'GET', '/api/engagement')).body;
 const saved = async (k, test) => expect.poll(async () => { const s = await stored(k); return !!(s && s.exists && test(s.data)); }, { timeout: 20_000 }).toBe(true);
 
-const P = { chair: 'chair@coastline.test', ceo: 'ceo@coastline.test', recorder: 'recorder@coastline.test', cro: 'cro@coastline.test', board: 'board@coastline.test', mo: 'mo@coastline.test' };
+const CASES = {
+  coastline: {
+    company: 'Coastline Super (fictional)', domain: 'coastline.test', entityType: 'superannuationTrustee', jurisdiction: 'AU', sector: 'AU-SUPERANNUATION', pack: 'superTrustee', ref: 'CS',
+    areas: ['Member services and communications', 'Claims and group insurance', 'Advice', 'Investments', 'Administration and payments', 'Complaints and disputes', 'Finance and reporting', 'Legal and compliance', 'Technology operations'],
+    posture: ['S3', 'S2', 'S2', 'S3', 'S3', 'S2', 'S2', 'S1', 'S3'], // the cautious area: Cautious, so up to A2
+    cautious: 1, condition: 'A person decides every death or disablement claim', fn: 'ci', // the cautious area's RA function id
+    max: { ms: 'A4', ci: 'A2', ad: 'A2', iv: 'A4', ap: 'A4', cd: 'A2', fi: 'A2', lc: 'A1', to: 'A4' },
+    redLine: 'AI declining a death or disablement claim with no person reviewing it', harm: 'A member wrongly denied or delayed a benefit',
+    reason: 'Triage only: routes claims to fast-track or review, and a person decides each one',
+    register: 'fixtures/coastline-provider-register.csv', criticalOp: 'Benefit payments',
+    evidence: { kind: 'letter', first: ['G3', 'AI dependency register'], second: ['B2', 'Calibration set'], none: 'A2', noneMd: 'S3', title: 'Gathered from AI Risk Appetite and AI Use Assessment' },
+  },
+  harlow: {
+    company: 'Harlow Ridge Bank (fictional)', domain: 'harlowridge.test', entityType: 'bank', jurisdiction: 'US', sector: 'US-BANKING', pack: 'usBanking', ref: 'HRB',
+    areas: ['Retail lending', 'Business lending', 'Deposits and payments', 'Fraud and financial crime', 'Markets and treasury', 'Customer service', 'Operations', 'Technology and security'],
+    posture: ['S2', 'S2', 'S3', 'S2', 'S3', 'S3', 'S2', 'S3'],
+    cautious: 3, condition: 'A person decides every account closure or payment hold for suspected fraud', fn: 'ffc',
+    max: { rl: 'A2', bl: 'A2', dp: 'A4', ffc: 'A2', mt: 'A4', cs: 'A4', o: 'A2', ts: 'A4' },
+    redLine: 'AI closing a customer’s account or holding a payment for suspected fraud with no person reviewing it', harm: 'A customer wrongly declined, charged or locked out of their money',
+    reason: 'Triage only: routes alerts to review, and a person decides each hold',
+    register: 'fixtures/harlow-ridge-provider-register.csv', criticalOp: 'Wire and ACH payments',
+    // the index is by the sector's regime (US.6): SR 26-2 / OCC 2026-13 and the 2023 third-party guidance. Every one of
+    // its nine expectations has evidence from the chain (none: null), where two APRA bullets have none.
+    evidence: { kind: 'regime', first: ['MR1', 'AI dependency register'], second: ['MR3', 'Calibration set'], none: null, noneMd: null, title: 'Gathered from AI Risk Appetite and AI Use Assessment' },
+  },
+};
+const CASE = CASES[process.env.CHAIN_CASE || 'coastline'];
+if (!CASE) throw new Error(`CHAIN_CASE must be one of ${Object.keys(CASES).join(', ')}`);
+const P = Object.fromEntries(['chair', 'ceo', 'recorder', 'cro', 'board', 'mo'].map(w => [w, `${w}@${CASE.domain}`]));
 const ids = {};
-const AREAS = ['Member services and communications', 'Claims and group insurance', 'Advice', 'Investments', 'Administration and payments', 'Complaints and disputes', 'Finance and reporting', 'Legal and compliance', 'Technology operations'];
-const POSTURE = ['S3', 'S2', 'S2', 'S3', 'S3', 'S2', 'S2', 'S1', 'S3']; // Claims and group insurance: Cautious, so up to A2
+const AREAS = CASE.areas, POSTURE = CASE.posture, CAUTIOUS = AREAS[CASE.cautious], SHORT = CASE.company.replace(/ \(fictional\)$/, '').split(' ')[0];
 
 test('set-up: the people, in each app', async () => {
   for (const [k, list] of Object.entries({ bd: [['chair', ['chair']], ['ceo', ['ceo']], ['recorder', ['recorder']]], ra: [['cro', ['cro']], ['board', ['board']]], ua: [['mo', ['methodOwner']]] })) {
     for (const [who, roles] of list) {
-      const r = await api(k, 'POST', '/api/admin/users', { email: P[who], name: who.toUpperCase() + ' (Coastline)', organisation: 'Coastline Super (fictional)', roles, isAdmin: false, active: true });
+      const r = await api(k, 'POST', '/api/admin/users', { email: P[who], name: who.toUpperCase() + ` (${SHORT})`, organisation: CASE.company, roles, isAdmin: false, active: true });
       expect([201, 409], `${k} ${who}: ${JSON.stringify(r.body)}`).toContain(r.status);
       ids[k + ':' + who] = r.body.user ? r.body.user.id : (await api(k, 'GET', '/api/admin/users')).body.users.find(u => u.email === P[who]).id;
     }
@@ -70,13 +99,13 @@ test('the three apps reach each other through their service bindings', async () 
 
 test('1 · Board Direction: the chair records the board directions', async ({ browser }) => {
   const ch = ids['bd:chair'];
-  const data = { schema: 'triodian.bd.v1', engagement: { id: 'e-coastline-bd', company: 'Coastline Super (fictional)', entityType: 'superannuationTrustee', jurisdiction: 'AU', sector: 'AU-SUPERANNUATION', mode: 'connected', sectorPack: 'superTrustee', reference: 'CS-BD-2026', privilegeMarking: 'Privileged and confidential · prepared at the request of counsel', practitioner: { firm: '', line: '' }, boardDates: { workshop: '2026-11-18', resolution: '2026-12-02' }, gcActsAsCounsel: false, secondApproverId: '' },
+  const data = { schema: 'triodian.bd.v1', engagement: { id: `e-${SHORT.toLowerCase()}-bd`, company: CASE.company, entityType: CASE.entityType, jurisdiction: CASE.jurisdiction, sector: CASE.sector, mode: 'connected', sectorPack: CASE.pack, reference: `${CASE.ref}-BD-2026`, privilegeMarking: 'Privileged and confidential · prepared at the request of counsel', practitioner: { firm: '', line: '' }, boardDates: { workshop: '2026-11-18', resolution: '2026-12-02' }, gcActsAsCounsel: false, secondApproverId: '' },
     areas: AREAS.map((name, i) => ({ id: 'A' + (i + 1), name })), scopeAgreed: {}, inventory: [],
     positions: {
-      B2: Object.fromEntries(AREAS.map((_, i) => ['A' + (i + 1), { posture: POSTURE[i], condition: i === 1 ? 'A person decides every death or disablement claim' : '', proposedBy: ch }])),
-      B3: { lines: [{ id: 'RL1', use: 'AI declining a death or disablement claim with no person reviewing it', scope: 'Claims and group insurance', appliesTo: 'The trustee and its providers', testedAgainst: 'none', proposedBy: ch }] },
+      B2: Object.fromEntries(AREAS.map((_, i) => ['A' + (i + 1), { posture: POSTURE[i], condition: i === CASE.cautious ? CASE.condition : '', proposedBy: ch }])),
+      B3: { lines: [{ id: 'RL1', use: CASE.redLine, scope: CAUTIOUS, appliesTo: 'The company and its providers', testedAgainst: 'none', proposedBy: ch }] },
       B4: { events: [{ id: 'RV1', event: 'A new AI use at A3 (Decides) or above', timing: 'Before it starts', by: 'CEO', proposedBy: ch }] },
-      B6: { harms: { H1: { statement: 'A member wrongly denied or delayed a benefit', threshold: 'Any single instance', source: 'New', proposedBy: ch } } },
+      B6: { harms: { H1: { statement: CASE.harm, threshold: 'Any single instance', source: 'New', proposedBy: ch } } },
       B7: { measures: [{ id: 'BM3', measure: 'Material AI incidents', limit: '0', owner: 'CEO' }], events: [{ id: 'EV1', event: 'A material AI incident', to: 'Chair', within: '24 hours' }], proposedBy: ch },
       B8: { owners: { AC3: 'The CEO' }, proposedBy: ch },
     },
@@ -96,7 +125,7 @@ test('1 · Board Direction: the chair records the board directions', async ({ br
   await saved('bd', d => (d.directions || {}).by === ch);
   const dir = await api('bd', 'GET', '/api/board-directions');
   expect(dir.status).toBe(200);
-  expect(dir.body.directions.BD1.areas.find(a => a.name === 'Claims and group insurance').maxTier).toBe('A2');
+  expect(dir.body.directions.BD1.areas.find(a => a.name === CAUTIOUS).maxTier).toBe('A2');
   conforms('board-directions-v1.schema.json', dir.body);
   expect(p._errors).toEqual([]);
   await ctx.close();
@@ -105,35 +134,35 @@ test('1 · Board Direction: the chair records the board directions', async ({ br
 test('2 · Risk Appetite: the directions load over the binding, show on decision 1, and K11 holds back a ceiling above them', async ({ browser }) => {
   const a = await open(browser, 'ra', ADMIN, '/admin/');
   await a.p.locator('[data-act="new"]').click();
-  await a.p.locator('#f_engagement_sectorPack').selectOption('superTrustee');
-  await a.p.locator('#f_engagement_insurer').fill('Coastline Super (fictional)'); await a.p.locator('#f_engagement_insurer').blur();
+  await a.p.locator('#f_engagement_sectorPack').selectOption(CASE.pack);
+  await a.p.locator('#f_engagement_insurer').fill(CASE.company); await a.p.locator('#f_engagement_insurer').blur();
   await a.p.click('[data-act="loadDirBoard"]');
   await expect(a.p.locator('#toast')).toContainText('Board directions loaded');
   await expect(a.p.locator('body')).toContainText('Every function matches a BD1 area.');
   await a.p.evaluate(() => window.RAF.save());
-  await saved('ra', d => d.boardDirections && d.boardDirections.source === 'board' && d.engagement.sectorPack === 'superTrustee');
+  await saved('ra', d => d.boardDirections && d.boardDirections.source === 'board' && d.engagement.sectorPack === CASE.pack);
   expect(a.p._errors).toEqual([]);
   await a.ctx.close();
 
   const { ctx, p } = await open(browser, 'ra', P.cro, '/#d1');
   await p.evaluate(() => window.RAF.go('d1'));
   await expect(p.locator('body')).toContainText('The board’s directions for this decision · BD1, BD2, BD3');
-  await expect(p.locator('body')).toContainText('Claims and group insurance: Cautious · up to A2 · A person decides every death or disablement claim');
-  // every decision 1 ceiling, within the posture except Claims and group insurance for own staff at A3
+  await expect(p.locator('body')).toContainText(`${CAUTIOUS}: Cautious · up to A2 · ${CASE.condition}`);
+  // every decision 1 ceiling, within the posture except the cautious area for own staff at A3
   const cro = ids['ra:cro'];
-  await p.evaluate(({ cro }) => {
-    const S = window.RAF.state, max = { ms: 'A4', ci: 'A2', ad: 'A2', iv: 'A4', ap: 'A4', cd: 'A2', fi: 'A2', lc: 'A1', to: 'A4' };
-    S.functions.forEach(f => ['own', 'provider', 'platform'].forEach(l => { S.decisions.d1.cells[`d1.${f.id}.${l}`] = { value: f.id === 'ci' && l === 'own' ? 'A3' : max[f.id], condition: '', testable: false, reason: '', boardRevisit: '', proposedBy: cro, recordedBy: 'cro', owner: cro, dissent: '', status: 'set', notSetOwner: '', notSetDue: '', source: '' }; }));
+  await p.evaluate(({ cro, max, fn }) => {
+    const S = window.RAF.state;
+    S.functions.forEach(f => { if (!max[f.id]) throw new Error('no ceiling for function ' + f.id); ['own', 'provider', 'platform'].forEach(l => { S.decisions.d1.cells[`d1.${f.id}.${l}`] = { value: f.id === fn && l === 'own' ? 'A3' : max[f.id], condition: '', testable: false, reason: '', boardRevisit: '', proposedBy: cro, recordedBy: 'cro', owner: cro, dissent: '', status: 'set', notSetOwner: '', notSetDue: '', source: '' }; }); });
     window.RAF.render();
-  }, { cro });
+  }, { cro, max: CASE.max, fn: CASE.fn });
   let k11 = await p.evaluate(() => window.RAF.checks().find(k => k.id === 'K11'));
   expect(k11.state).toBe('fail');
-  expect(k11.off.map(o => o.id)).toEqual(['d1.ci.own']);
-  await p.evaluate(() => { const c = window.RAF.state.decisions.d1.cells['d1.ci.own']; c.reason = 'Triage only: routes claims to fast-track or review, and a person decides each one'; c.boardRevisit = 'Board meeting 2 December 2026'; window.RAF.render(); });
+  expect(k11.off.map(o => o.id)).toEqual([`d1.${CASE.fn}.own`]);
+  await p.evaluate(({ fn, reason }) => { const c = window.RAF.state.decisions.d1.cells[`d1.${fn}.own`]; c.reason = reason; c.boardRevisit = 'Board meeting 2 December 2026'; window.RAF.render(); }, { fn: CASE.fn, reason: CASE.reason });
   k11 = await p.evaluate(() => window.RAF.checks().find(k => k.id === 'K11'));
   expect(k11.state).toBe('pass');
   await p.evaluate(() => window.RAF.save());
-  await saved('ra', d => Object.keys(d.decisions.d1.cells).length === 27 && d.decisions.d1.cells['d1.ci.own'].boardRevisit);
+  await saved('ra', d => Object.keys(d.decisions.d1.cells).length === AREAS.length * 3 && d.decisions.d1.cells[`d1.${CASE.fn}.own`].boardRevisit);
   expect(p._errors).toEqual([]);
   await ctx.close();
 });
@@ -163,27 +192,28 @@ test('3 · Risk Appetite: the CRO agrees the working appetite and the board appr
   const cal = await api('ra', 'GET', '/api/calibration-set');
   expect(cal.status).toBe(200);
   expect(cal.body.status).toBe('approved');
-  expect(cal.body.calibrationSet.parameters.P1['Claims and group insurance'].own.tier).toBe('A3');
+  expect(cal.body.calibrationSet.parameters.P1[CAUTIOUS].own.tier).toBe('A3');
   conforms('calibration-set-v1.schema.json', cal.body.calibrationSet);
   expect(b.p._errors).toEqual([]);
   await b.ctx.close();
 });
 
-// Coastline's provider register (the client's own, as a GRC tool exports it): 52 rows over 7 arrangements, 6 of which
-// name the critical operation Benefit payments, and two malformed rows the import refuses with the line and reason.
-const REGISTER = join(dirname(fileURLToPath(import.meta.url)), 'fixtures/coastline-provider-register.csv');
+// The client's provider register (its own, as a GRC tool exports it): 52 rows over 7 arrangements, 6 of which name
+// the critical operation (Benefit payments; Wire and ACH payments for Harlow Ridge), and two malformed rows the import
+// refuses with the line and reason. Harlow Ridge's is Coastline's with US providers, functions and locations.
+const REGISTER = join(dirname(fileURLToPath(import.meta.url)), CASE.register);
 
-test('4 · Use Assessment: Coastline’s provider register is imported in Lite scope, the calibration set loads over the binding, and Triodian issues the in-use feed', async ({ browser }) => {
+test('4 · Use Assessment: the client’s provider register is imported in Lite scope, the calibration set loads over the binding, and Triodian issues the in-use feed', async ({ browser }) => {
   const { ctx, p } = await open(browser, 'ua', P.mo);
   await p.locator('[data-act="new"]').first().click();
   await expect(p.locator('body')).toContainText('Set up the assessment');
   await saved('ua', d => !!d.engagement);
   // Set-up, through the set-up screen: the trustee, the super pack, and Lite scope
-  await p.locator('#f_engagement_insurer').fill('Coastline Super (fictional)'); await p.locator('#f_engagement_insurer').blur();
-  await p.locator('#f_engagement_reference').fill('CS-UA-2026'); await p.locator('#f_engagement_reference').blur();
-  await p.locator('#f_engagement_sectorPack').selectOption('superTrustee');
+  await p.locator('#f_engagement_insurer').fill(CASE.company); await p.locator('#f_engagement_insurer').blur();
+  await p.locator('#f_engagement_reference').fill(`${CASE.ref}-UA-2026`); await p.locator('#f_engagement_reference').blur();
+  await p.locator('#f_engagement_sectorPack').selectOption(CASE.pack);
   await p.locator('#f_engagement_scope').selectOption('lite');
-  await saved('ua', d => d.engagement.sectorPack === 'superTrustee' && d.engagement.scope === 'lite' && d.engagement.insurer === 'Coastline Super (fictional)');
+  await saved('ua', d => d.engagement.sectorPack === CASE.pack && d.engagement.scope === 'lite' && d.engagement.insurer === CASE.company);
   // The register, imported on the Set screen (R.1)
   await p.evaluate(() => window.AUA.go('set'));
   await p.setInputFiles('#registerIn', REGISTER);
@@ -193,7 +223,7 @@ test('4 · Use Assessment: Coastline’s provider register is imported in Lite s
   await saved('ua', d => (d.entries || []).length === 50 && d.arrangements.length === 7);
   const st = await p.evaluate(() => { const S = window.AUA.state; return { arr: S.arrangements.map(a => a.externalId), ent: S.entries.map(e => e.externalId) }; });
   expect(st.arr).toEqual(['PR-0101', 'PR-0102', 'PR-0103', 'PR-0104', 'PR-0105', 'PR-0106', 'PR-0107']); // the client's ids are kept
-  // Lite scope (R.3): the six arrangements behind Benefit payments are assessed; PR-0103 is left out, and every output says so
+  // Lite scope (R.3): the six arrangements behind the critical operation are assessed; PR-0103 is left out, and every output says so
   await expect(p.locator('body')).toContainText('Lite scope: 6 arrangements behind critical operations are assessed');
   const lite = await p.evaluate(() => ({ ids: Object.fromEntries(window.AUA.state.arrangements.map(a => [a.externalId, a.id])), outs: ['DL1', 'DL2', 'DL6', 'RP', 'CM'].map(id => window.AUA.output(id)) }));
   for (const md of lite.outs) {
@@ -248,7 +278,7 @@ test('6 · Board Direction: the chair takes the board view, and it matches the a
   await p.locator('#step-B9 > summary').click();
   await p.click('[data-act="takeBoardView"]');
   await expect(p.locator('#step-B9')).toContainText('the AI risk appetite is approved by the board, version 1');
-  await expect(p.locator('#step-B9')).toContainText('Claims and group insurance');
+  await expect(p.locator('#step-B9')).toContainText(CAUTIOUS);
   await expect(p.locator('#step-B9')).toContainText('A3'); // the approved ceilings show in the table
   await expect(p.locator('#step-B9')).toContainText('In use now · counted from the AI Use Assessment register');
   await saved('bd', d => (d.boardViews || []).length === 1);
@@ -261,9 +291,10 @@ test('6 · Board Direction: the chair takes the board view, and it matches the a
   await ctx.close();
 });
 
-// Task R.2: the APRA letter evidence index. Board Direction gathers the artefacts over APPETITE; Risk Appetite adds
-// its own and, over ASSESSMENT, Use Assessment's. Each letter bullet shows its evidence or "none yet".
-test('7 · Board Direction: the evidence index gathers the artefacts of all three apps, by letter bullet and by ISO/IEC 42001 control', async ({ browser }) => {
+// Task R.2: the evidence index. Board Direction gathers the artefacts over APPETITE; Risk Appetite adds its own and,
+// over ASSESSMENT, Use Assessment's. Each APRA letter bullet (Coastline) or regime expectation (Harlow Ridge, US.6)
+// shows its evidence or "none yet".
+test('7 · Board Direction: the evidence index gathers the artefacts of all three apps, by letter bullet or regime expectation and by ISO/IEC 42001 control', async ({ browser }) => {
   const { ctx, p } = await open(browser, 'bd', P.chair);
   const r = await api('bd', 'GET', '/api/evidence-from-appetite');
   expect(r.status).toBe(200);
@@ -277,21 +308,23 @@ test('7 · Board Direction: the evidence index gathers the artefacts of all thre
   expect(art('UA', 'DL1').note).toContain('Lite scope: 6 of 7 arrangements, those behind critical operations; 1 left out for later triage');
   expect(art('UA', 'FN').note).toContain('Lite scope: 6 of 7');
   expect(art('UA', 'EP').note).not.toContain('Lite scope');
-  const card = p.locator('#evidence');
+  const E = CASE.evidence, card = p.locator('#evidence');
   await p.click('[data-act="gatherEvidence"]');
-  await expect(card).toContainText('Gathered from AI Risk Appetite and AI Use Assessment');
-  await expect(card.locator('[data-ev="G3"]')).toContainText('AI dependency register');
-  await expect(card.locator('[data-ev="B2"]')).toContainText('Calibration set');
-  await expect(card.locator('[data-ev="A2"]')).toContainText('none yet');
+  await expect(card).toContainText(E.title);
+  await expect(card.locator(`[data-ev="${E.first[0]}"]`)).toContainText(E.first[1]);
+  await expect(card.locator(`[data-ev="${E.second[0]}"]`)).toContainText(E.second[1]);
+  if (E.none) await expect(card.locator(`[data-ev="${E.none}"]`)).toContainText('none yet'); else await expect(card).not.toContainText('none yet');
+  if (E.kind === 'regime') { await expect(card).toContainText('SR 26-2'); await expect(card).not.toContainText('APRA'); await expect(card).not.toContainText('CPS 230'); }
   await p.selectOption('#ev-by', 'iso');
   // Findings sit under A.10.3 (suppliers) once Board Direction tags controls, under the A.10 group before that.
   await expect(card.locator('[data-ev^="A.10"]').filter({ hasText: 'Findings F1 to F4' }).first()).toBeVisible();
   const md = await p.evaluate(() => window.BDApp.evidenceMarkdown('letter'));
-  expect(md).toMatch(/## B2 [^]*\| AI Risk Appetite \| Calibration set \| Recorded \|/);
-  expect(md).toMatch(/## G3 [^]*\| AI Use Assessment \| AI dependency register \|/);
+  expect(md).toMatch(new RegExp(`## ${E.second[0]} [^]*\\| AI Risk Appetite \\| Calibration set \\| Recorded \\|`));
+  expect(md).toMatch(new RegExp(`## ${E.first[0]} [^]*\\| AI Use Assessment \\| AI dependency register \\|`));
   expect(md).toMatch(/\| AI Use Assessment \| AI dependency register \|[^\n]*Lite scope: 6 of 7 arrangements/);
-  expect(md).toMatch(/## S3 [^\n]*\n\n[^\n]*\n\nNone yet\./);
-  if (process.env.CHAIN_OUT) { // the index as Coastline would receive it, for a person to read
+  if (E.noneMd) expect(md).toMatch(new RegExp(`## ${E.noneMd} [^\\n]*\\n\\n[^\\n]*\\n\\nNone yet\\.`)); else expect(md).not.toContain('None yet.');
+  if (E.kind === 'regime') { expect(md).toContain('by expectation of SR 26-2'); expect(md).not.toContain('APRA'); }
+  if (process.env.CHAIN_OUT) { // the index as the client would receive it, for a person to read
     writeFileSync(join(process.env.CHAIN_OUT, 'evidence-index-by-letter.md'), md);
     writeFileSync(join(process.env.CHAIN_OUT, 'evidence-index-by-iso.md'), await p.evaluate(() => window.BDApp.evidenceMarkdown('iso')));
   }
