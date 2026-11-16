@@ -1,6 +1,6 @@
 // Checks the installer's client configuration against the app checkouts beside this repo, without touching Cloudflare.
 // Run: node test-install.mjs
-import { clientConfig } from './install.mjs';
+import { clientConfig, accessApp } from './install.mjs';
 import { APPS, appsFor, stripJsonc, JURISDICTIONS, SECTORS } from './lib-config.mjs';
 import { resolve, join } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
@@ -42,4 +42,14 @@ for (const [repo, file, global] of [['risk_appetite', 'content.js', 'RAF_CONTENT
   const us = ['US-BANKING', 'US-INSURANCE', 'US-SECURITIES', 'US-HEALTH', 'US-CRITICAL-INFRASTRUCTURE'].map(s => T.startPack(B, { jurisdiction: 'US', sector: s }));
   ok(`${repo}: each US main sector starts on its US overlay pack`, us.join() === 'usBanking,usInsurance,usSecurities,usHealth,usCriticalInfrastructure', us.join());
 }
+// ID.2: sign-in through the organisation's identity provider, federated in Access
+{
+  const app = APPS[0];
+  const plain = accessApp(app, a, 'risk-appetite.acme.example.com');
+  ok('without an identity provider the Access application offers the email code and names no idp', !('allowed_idps' in plain) && plain.domain === 'risk-appetite.acme.example.com/auth/email' && /email code/.test(plain.policies[0].name));
+  const idp = accessApp(app, { ...a, idp: '0f8c1c2e-8d1b-4f3a-9b1d-0a1b2c3d4e5f' }, 'risk-appetite.acme.example.com');
+  ok('with one, only that provider is offered on the sign-in path', idp.allowed_idps.length === 1 && idp.allowed_idps[0] === '0f8c1c2e-8d1b-4f3a-9b1d-0a1b2c3d4e5f' && /identity provider/.test(idp.policies[0].name) && idp.domain.endsWith('/auth/email'));
+  ok('every app is told it sits behind Access', clientConfig(app, a, ids).config.vars.IDENTITY_PROVIDER === 'access');
+}
+
 console.log(fails ? `\n${fails} failed` : '\nAll passed'); process.exit(fails ? 1 : 0);

@@ -33,8 +33,10 @@ CLOUDFLARE_API_TOKEN=... CLOUDFLARE_ACCOUNT_ID=... node install.mjs
 It asks for a short client code, the client's **jurisdiction** (Australia, Singapore or the United States) and **regulated
 sector** (for example banking, insurance, superannuation, securities, health or critical infrastructure, or none), whether the client is a
 **general company** (AI Board Direction and AI Confidentiality Exposure Assessment) or a **regulated entity** (all four;
-the default when the sector is financially regulated), the domain, the Zero Trust team domain and the first
-administrator's email. The jurisdiction and regulated sector are where each app starts (`DEFAULT_JURISDICTION`,
+the default when the sector is financially regulated), the domain, the Zero Trust team domain, whether people sign in
+through the organisation's own identity provider (the id of a login method already added in Zero Trust: Entra ID, Google
+Workspace, Okta or any OpenID Connect or SAML provider; blank for the email one-time code; see
+[Sign-in and SSO](https://docs.triodian.com/guides/deploying/sign-in-and-sso)) and the first administrator's email. The jurisdiction and regulated sector are where each app starts (`DEFAULT_JURISDICTION`,
 `DEFAULT_SECTOR`); people change both in the apps at any time. The sectors are the Triodian Metamodel's list. A new
 engagement in each app starts on the sector's pack: the jurisdiction's own pack where there is one (an Australian
 superannuation trustee, a Singapore bank), else the jurisdiction's overlay on the sector's best-practice baseline (each
@@ -59,7 +61,7 @@ Backup and restore of a deployment: `docs/restore.md`.
 
 ```json
 { "code": "acme", "jurisdiction": "AU", "sector": "AU-SUPERANNUATION", "profile": "regulated",
-  "domain": "acme.com.au", "teamDomain": "acme.cloudflareaccess.com", "firstAdmins": ["gc@acme.com.au"], "dir": "./triodian-acme" }
+  "domain": "acme.com.au", "teamDomain": "acme.cloudflareaccess.com", "idp": "", "firstAdmins": ["gc@acme.com.au"], "dir": "./triodian-acme" }
 ```
 
 `sector` is one of the ids in `lib-config.mjs`, or empty. A United States bank, for example:

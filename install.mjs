@@ -47,6 +47,7 @@ async function ask() {
   a.profile = await q('General company or regulated entity? (general / regulated)', regulated ? 'regulated' : 'general', v => ['general', 'regulated'].includes(v) ? '' : 'Type general or regulated.');
   a.domain = await q('Domain the apps sit under (each app gets a subdomain, for example board-direction.<domain>)', '', v => /^[a-z0-9.-]+\.[a-z]{2,}$/.test(v) ? '' : 'Type a domain such as acme.com.au, on a zone in this Cloudflare account.');
   a.teamDomain = await q('Cloudflare Zero Trust team domain (Zero Trust → Settings → Custom pages)', '', v => /\.cloudflareaccess\.com$/.test(v) ? '' : 'It ends in .cloudflareaccess.com.');
+  a.idp = await q('Sign in through the organisation’s own identity provider? Paste the login method’s id from Zero Trust → Settings → Authentication → Login methods (Entra ID, Google Workspace, Okta…), or leave blank for the email one-time code', '', v => !v || /^[0-9a-f-]{36}$/i.test(v) ? '' : 'It is a 36-character id, or blank.');
   a.firstAdmins = (await q('First administrator email(s), comma-separated', '', v => v.split(',').every(e => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.trim())) ? '' : 'Type one or more email addresses.')).split(',').map(e => e.trim().toLowerCase());
   a.dir = await q('Folder to fetch the apps into', `./triodian-${a.code}`);
   rl.close();
@@ -87,11 +88,26 @@ export function clientConfig(app, a, ids) {
     { binding: 'IDENTITY', database_name: `triodian-identity-${a.code}`, database_id: ids.identity }];
   c.services = (env.services || base.services || []).map(s => ({ ...s, service: s.service.replace(/-(client|test)$/, '') + `-${a.code}` }));
   c.vars = { ...(env.vars || {}), SUITE_DEMO: 'off', DEMO_LOGIN: '', DEMO_ADMINS: '', SITE_URL: `https://${host}`, SUITE_COOKIE_DOMAIN: a.domain, SUITE_SESSION_COOKIE: 'tri_suite',
-    ACCESS_TEAM_DOMAIN: a.teamDomain, FIRST_ADMINS: a.firstAdmins.join(','), NOTIFY_SENDING: 'off', NOTIFY_FROM: '',
+    // Behind Access, Access proves the email (IDENTITY_PROVIDER access, lib/identity/provider.js); the organisation's own
+    // provider, if any, is federated in Access (accessApp below). Roles stay in each app, set by its administrators.
+    ACCESS_TEAM_DOMAIN: a.teamDomain, IDENTITY_PROVIDER: 'access', FIRST_ADMINS: a.firstAdmins.join(','), NOTIFY_SENDING: 'off', NOTIFY_FROM: '',
     // Where each app starts; people change both in the app at any time.
     DEFAULT_JURISDICTION: a.jurisdiction || 'AU', DEFAULT_SECTOR: a.sector || '' };
   if (env.triggers || base.triggers) c.triggers = env.triggers || base.triggers;
   return { config: c, host, file: join(dir, `wrangler.${a.code}.json`) };
+}
+
+/** The Access application for one app's sign-in path. With a.idp (a Zero Trust login method's id) only that identity
+ *  provider is offered, so people sign in through the organisation's own provider and nobody by email code alone; the
+ *  provider's MFA and offboarding then apply. Without it, the email one-time code. The policy admits anyone the provider
+ *  admits; who may use the app is still the app's own user list (development plan ID.2). Exported for tests. */
+export function accessApp(app, a, host) {
+  const body = {
+    name: `${app.name} (${a.code}) sign-in`, domain: `${host}/auth/email`, type: 'self_hosted', session_duration: '24h',
+    policies: [{ name: a.idp ? 'Anyone the identity provider admits' : 'Anyone with an email code', decision: 'allow', include: [{ everyone: {} }] }],
+  };
+  if (a.idp) body.allowed_idps = [a.idp];
+  return body;
 }
 
 async function main() {
@@ -130,13 +146,11 @@ async function main() {
   const made = apps.map(app => clientConfig(app, a, ids));
   for (const m of made) { writeFileSync(m.file, JSON.stringify(m.config, null, 2) + '\n'); say(`  wrote ${m.file}`); }
 
-  step('Setting up email sign-in (Cloudflare Access, one application per app, for /auth/email only)');
+  step(a.idp ? 'Setting up sign-in through the organisation’s identity provider (Cloudflare Access, one application per app, for /auth/email only)'
+    : 'Setting up email sign-in (Cloudflare Access, one application per app, for /auth/email only)');
   for (const [i, app] of apps.entries()) {
     const m = made[i];
-    const r = await cf(`/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID || 'ACCOUNT'}/access/apps`, {
-      name: `${app.name} (${a.code}) sign-in`, domain: `${m.host}/auth/email`, type: 'self_hosted', session_duration: '24h',
-      policies: [{ name: 'Anyone with an email code', decision: 'allow', include: [{ everyone: {} }] }],
-    });
+    const r = await cf(`/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID || 'ACCOUNT'}/access/apps`, accessApp(app, a, m.host));
     wrangler(join(a.dir, app.dir), ['secret', 'put', 'ACCESS_AUD', '-c', m.file], r.result.aud);
   }
 
