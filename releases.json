@@ -1,5 +1,5 @@
 {
-  "note": "The release of each app that install.mjs fetches and deploys: a git tag or commit, so a client install is the same code every time and a later push to main does not change what a client runs (security review 15 Nov 2026, S.8). Move an app forward here deliberately, after its CI is green, and record the date. `node install.mjs --latest` ignores this file and takes each repo's main. tools/release-checks.mjs runs against these pins in CI: a pin that accepts a forged first save fails the build (penetration test 16 Nov 2026, PT-02).",
+  "note": "The release of each app that install.mjs fetches and deploys: a git tag or commit, so a client install is the same code every time and a later push to main does not change what a client runs (security review 15 Nov 2026, S.8). Move an app forward here deliberately, after its CI is green, and record the date. `node install.mjs --latest` ignores this file and takes each repo's main. tools/release-checks.mjs runs against these pins in CI: a pin that accepts a forged first save, redirects off-origin after sign-in, or answers destroyed:true while retaining the matter fails the build (penetration test 16 Nov 2026, PT-02; retest R-01).",
   "pinned_on": "2026-11-16",
   "apps": {
     "risk-appetite": {
@@ -11,8 +11,8 @@
       "note": "main as at 16 Nov 2026 12:10, with the PT-03 redirect fix and the Access token nbf check merged; the commit deployed live through the gated workflow (development plan P.3)."
     },
     "confidentiality": {
-      "ref": "8e43c02ea1d1e991cf6f17a05109e498e9718df7",
-      "note": "main as at 16 Nov 2026 12:10, with the PT-03 redirect fix and the Access token nbf check merged; the commit deployed live through the gated workflow (development plan P.3)."
+      "ref": "a87c95490d86378912b82d862a3478f2a0238077",
+      "note": "main as at 16 Nov 2026 12:45, with the PT-03 redirect fix, the Access token nbf check and the PT-05 destruction fix merged; the commit deployed live through the gated workflow (development plan P.3, P.5) and the one the penetration retest of 16 Nov exercised (P.10)."
     },
     "board-direction": {
       "ref": "bbdaa2a2d8334455ca45327457bb6523f3fe0d92",
