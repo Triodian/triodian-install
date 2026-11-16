@@ -106,9 +106,14 @@ does. No secrets and no Cloudflare account. With the app repos checked out besid
 
 ```
 cd suite/chain && npm ci && npx playwright test
+CHAIN_CASE=harlow npx playwright test
 ```
 
-The suite workflow runs it after the suite test.
+The first run is Coastline Super, a fictional superannuation trustee in Australia. The second is Harlow Ridge Bank, a
+fictional New York bank on the US bank packs (development plan US.5): the same seven steps, with the bank's own provider
+register (`fixtures/harlow-ridge-provider-register.csv`) and the evidence index by the bank's regime (SR 26-2 / OCC
+2026-13 and the 2023 interagency third-party guidance) instead of the APRA letter. Each run needs its own storage, so
+they are two invocations. The suite workflow runs both after the suite test.
 
 ## Contributing
 

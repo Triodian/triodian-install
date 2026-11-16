@@ -1,7 +1,7 @@
 # Suite test (development plan task 1B.7): runs the four engagement apps together, sharing one local identity
 # database, on every push here and once a day, using each app's branch of the same name, or main. No secrets.
 # Then the chain test (gate G2): one regulated worked example through Board Direction, Risk Appetite and Use Assessment
-# with their real service bindings (suite/chain).
+# with their real service bindings (suite/chain), once for Coastline Super (AU) and once for Harlow Ridge Bank (US).
 name: Suite test
 on:
   push:
@@ -68,6 +68,10 @@ jobs:
       - name: Run the regulated chain (gate G2)
         working-directory: triodian-install/suite/chain
         env: { CHAIN_ROOT: '${{ github.workspace }}' }
+        run: npx playwright test
+      - name: Run the chain again for a US bank (development plan US.5; its own storage, so a second run)
+        working-directory: triodian-install/suite/chain
+        env: { CHAIN_ROOT: '${{ github.workspace }}', CHAIN_CASE: harlow }
         run: npx playwright test
       - name: Keep the chain test's report when it fails
         if: failure()
