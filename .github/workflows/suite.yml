@@ -58,6 +58,8 @@ jobs:
           git clone --quiet --depth 1 https://github.com/Triodian/Triodian_Metamodel.git triodian_metamodel
       - name: Check the installer's configurations
         run: cd triodian-install && node test-install.mjs
+      - name: Release checks (a pin that accepts a forged first save fails here; penetration test 16 Nov 2026, PT-02)
+        run: node triodian-install/tools/release-checks.mjs .
       - name: Run the apps together
         run: cd triodian-install && node suite/run.mjs ..
       - name: Install the chain test's browser tools
