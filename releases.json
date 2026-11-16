@@ -3,20 +3,20 @@
   "pinned_on": "2026-11-16",
   "apps": {
     "risk-appetite": {
-      "ref": "fab765723f041fa9ee4dc000c14c4dc3a94f04cf",
-      "note": "main as at 16 Nov 2026 morning, with #39 (first-save checks) merged; the commit deployed live through the gated workflow (development plan S.2). The 15 Nov pin 4e4e090d accepted a forged first-save approval (PT-02)."
+      "ref": "662be825dbeda876865faf3e18fe94e1f59ac479",
+      "note": "main as at 16 Nov 2026 12:10, with the PT-03 redirect fix and the Access token nbf check merged; the commit deployed live through the gated workflow (development plan P.3)."
     },
     "use-assessment": {
-      "ref": "e0d09ca487e2ef8b82d0073901facac5621c768b",
-      "note": "main as at 16 Nov 2026 morning, with #38 (brief provenance) merged; the commit deployed live through the gated workflow (S.2)."
+      "ref": "21a57eb2c579eeaded3aeca486142b4b1407f1bb",
+      "note": "main as at 16 Nov 2026 12:10, with the PT-03 redirect fix and the Access token nbf check merged; the commit deployed live through the gated workflow (development plan P.3)."
     },
     "confidentiality": {
-      "ref": "b91586d000642426a219bec437d278ea0dba789e",
-      "note": "main as at 16 Nov 2026 morning, with #29 (README) merged; the commit deployed live through the gated workflow (S.2)."
+      "ref": "8e43c02ea1d1e991cf6f17a05109e498e9718df7",
+      "note": "main as at 16 Nov 2026 12:10, with the PT-03 redirect fix and the Access token nbf check merged; the commit deployed live through the gated workflow (development plan P.3)."
     },
     "board-direction": {
-      "ref": "eeecd00ddcbdbd90522f3afbcf0576b6784e7273",
-      "note": "main as at 16 Nov 2026 morning, with #51 (first-save checks) and #52 merged; the commit deployed live through the gated workflow (S.2). The 15 Nov pin 4a89c5c8 accepted a forged first-save resolution (PT-02)."
+      "ref": "bbdaa2a2d8334455ca45327457bb6523f3fe0d92",
+      "note": "main as at 16 Nov 2026 12:10, with the PT-03 redirect fix and the Access token nbf check merged; the commit deployed live through the gated workflow (development plan P.3)."
     }
   }
 }
