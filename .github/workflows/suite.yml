@@ -69,7 +69,10 @@ jobs:
         working-directory: triodian-install/suite/chain
         env: { CHAIN_ROOT: '${{ github.workspace }}' }
         run: npx playwright test
+      # Branch leg only until releases.json pins revisions that carry the US evidence regimes (development plan US.6);
+      # then drop the condition so the release leg runs both cases.
       - name: Run the chain again for a US bank (development plan US.5; its own storage, so a second run)
+        if: matrix.source == 'branch'
         working-directory: triodian-install/suite/chain
         env: { CHAIN_ROOT: '${{ github.workspace }}', CHAIN_CASE: harlow }
         run: npx playwright test
