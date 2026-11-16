@@ -12,6 +12,11 @@
 //   6. Board Direction: the chair takes the board view over the APPETITE binding, and it matches the approved set
 //   7. Board Direction: the APRA letter evidence index gathers all three apps' artefacts over APPETITE (and ASSESSMENT),
 //      and Use Assessment's say they cover the Lite scope
+//   8. Use Assessment: the readiness columns of the register are on the entries; the Incident readiness record DL11
+//      lists the clocks for the jurisdiction and the gaps with owners; an exercise (the 13 November scenario, re-set in
+//      the client's chain) is recorded against the register and comes out as the VE record; both reach the evidence
+//      index at Board Direction (AI Incident Accountability, Shape A; development plan A.7). Skipped against a
+//      Use Assessment that predates use-assessment #45, as the pinned release does until releases.json moves.
 // Steps 1 to 7 together are gate G-ART (ready for ART): a super trustee, from an imported register, in Lite scope, to the
 // APRA letter evidence index. Steps 1 to 6 are gate G2.
 // Each step goes through the apps' own pages and APIs. Agreeing and approving are done the way the pages do them
@@ -63,6 +68,9 @@ const CASES = {
     reason: 'Triage only: routes claims to fast-track or review, and a person decides each one',
     register: 'fixtures/coastline-provider-register.csv', criticalOp: 'Benefit payments',
     evidence: { kind: 'letter', first: ['G3', 'AI dependency register'], second: ['B2', 'Calibration set'], none: 'A2', noneMd: 'S3', title: 'Gathered from AI Risk Appetite and AI Use Assessment' },
+
+    // step 8: the readiness columns of two entries, the clock the jurisdiction brings, the infrastructure of the scenario
+    incident: { holder: 'Harbourline Administration Pty Ltd (fictional)', clock: 'CPS 230, para 33', period: '72 hours', basis: 'per the Atlas as at 2026-11-15 (OBL-AU-CPS230-33@1', infrastructure: 'member-services API gateway', ends: '2026-12-21 16:30' },
   },
   harlow: {
     company: 'Harlow Ridge Bank (fictional)', domain: 'harlowridge.test', entityType: 'bank', jurisdiction: 'US', sector: 'US-BANKING', pack: 'usBanking', ref: 'HRB',
@@ -76,6 +84,8 @@ const CASES = {
     // the index is by the sector's regime (US.6): SR 26-2 / OCC 2026-13 and the 2023 third-party guidance. Every one of
     // its nine expectations has evidence from the chain (none: null), where two APRA bullets have none.
     evidence: { kind: 'regime', first: ['MR1', 'AI dependency register'], second: ['MR3', 'Calibration set'], none: null, noneMd: null, title: 'Gathered from AI Risk Appetite and AI Use Assessment' },
+
+    incident: { holder: 'Lakeshore Core Banking Inc. (fictional)', clock: 'Computer-Security Incident Notification Rule (12 CFR parts 53, 225 and 304), the rule', period: '36 hours', basis: "not yet in the Atlas; Triodian's reading of the instrument as at 2026-11-16", infrastructure: 'payments gateway', ends: '2026-12-20 04:30' },
   },
 };
 const CASE = CASES[process.env.CHAIN_CASE || 'coastline'];
@@ -331,6 +341,73 @@ test('7 · Board Direction: the evidence index gathers the artefacts of all thre
     writeFileSync(join(process.env.CHAIN_OUT, 'evidence-index-by-letter.md'), md);
     writeFileSync(join(process.env.CHAIN_OUT, 'evidence-index-by-iso.md'), await p.evaluate(() => window.BDApp.evidenceMarkdown('iso')));
   }
+  expect(p._errors).toEqual([]);
+  await ctx.close();
+});
+
+test('8 · Use Assessment: incident readiness from the register, the readiness record DL11, and an exercise recorded as a validation event (AI Incident Accountability, Shape A)', async ({ browser }) => {
+  const ev = await api('ua', 'GET', '/api/evidence');
+  test.skip(ev.status !== 200 || !(ev.body.artefacts || []).some(a => a.id === 'DL11'), 'this Use Assessment predates use-assessment #45 (the pinned release until releases.json moves)');
+  const I = CASE.incident, { ctx, p } = await open(browser, 'ua', P.mo);
+  await p.waitForFunction(pack => !!(window.AUA && window.AUA.state && window.AUA.state.entries.length && window.AUA.content().pack === pack), CASE.pack, { timeout: 30_000 });
+  // The nine readiness columns came in with the register (A.2): two entries carry them, the rest are gaps
+  const rd = await p.evaluate(() => Object.fromEntries(window.AUA.state.entries.filter(e => e.readiness && e.readiness.holder).map(e => [e.externalId, e.readiness])));
+  expect(Object.keys(rd).sort()).toEqual(['AIS-001', 'AIS-002']);
+  expect(rd['AIS-001'].holder).toBe(I.holder); expect(rd['AIS-001'].holderKind).toBe('vendor');
+  // DL11 (A.3): the clocks for the jurisdiction, each with its basis and "confirm with counsel"; the gaps with owners
+  const dl11 = await p.evaluate(() => window.AUA.output('DL11'));
+  expect(dl11).toContain('# DL11 · Incident readiness record');
+  expect(dl11).toContain(`| ${I.clock} |`); expect(dl11).toContain(I.period); expect(dl11).toContain(I.basis); expect(dl11).toContain('confirm with counsel');
+  expect(dl11).toMatch(/\*\*Scope: Lite\.\*\*/);
+  expect(dl11).toContain(`| ${I.holder} (the AI vendor) |`);
+  expect(dl11).toMatch(/\| Accountable person for the change process touching both \| not recorded \| The CRO \|/);
+  expect(dl11).toContain('## Gaps, with owners');
+  // DL12 (A.4): one draft letter per record holder named in the register, none settled, none sent
+  const dl12 = await p.evaluate(() => window.AUA.output('DL12'));
+  expect(dl12).toContain(`## HOLD-01 · ${I.holder}`); expect(dl12).toContain('DRAFT · not yet settled by counsel.'); expect(dl12).toContain('The app never sends a letter');
+  // An exercise (A.5, A.6): the 13 November facts re-set in the client's chain, recorded by the method owner against the
+  // entries that share the affected infrastructure, tested against the loaded calibration set, with the clocks running
+  // from the moment the entity became aware
+  const ent = await p.evaluate(() => Object.fromEntries(window.AUA.state.entries.map(e => [e.externalId, e.id])));
+  const hits = await p.evaluate(infra => { return window.AUA.state.entries.filter(e => (e.readiness.infrastructure || '').toLowerCase().includes(infra.toLowerCase())).map(e => e.externalId); }, I.infrastructure);
+  expect(hits.sort()).toEqual(['AIS-001', 'AIS-002']);
+  const cur = await api('ua', 'GET', '/api/engagement', undefined, P.mo);
+  const cal = cur.body.data.calibration && cur.body.data.calibration.parameters ? cur.body.data.calibration.parameters : {};
+  const tr = (cal.P10 || [])[0], tolKey = Object.keys(cal.P2 || {})[0];
+  const d = cur.body.data;
+  d.exercises = [{ ref: 'VE-01', kind: 'exercise', title: `The Saturday Morning Question, re-set in ${SHORT}'s chain`, date: '2026-12-18', awareAt: '2026-12-18T16:30', infrastructure: I.infrastructure, entryIds: [ent['AIS-001'], ent['AIS-002']], unknowns: '',
+    parties: [{ party: 'The AI vendor', said: 'Social media, Friday 19:40: not involved.', showed: 'Nothing by Saturday 09:00.' }],
+    tolerances: tolKey ? { [tolKey.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 80)]: { result: 'notKnown', note: 'Not known until the routing log is produced' } } : {},
+    triggers: tr ? { [tr.ref]: { fired: 'fired', at: '2026-12-18T17:10' } } : {}, breachAssertedBy: ids['ua:mo'], breachAssertedOn: '2026-12-18',
+    clocks: {}, clocksConfirmedBy: '', clocksConfirmedOn: '', line: 'We will say whether the AI system was involved when the records show it.', speaker: 'The CRO', lineSettledBy: '', lineSettledOn: '', seams: '', finding: '', recordsTime: '', exposure: '', actions: '', recordedBy: ids['ua:mo'], recordedOn: '2026-12-18', reviewedBy: '', reviewedOn: '', reviewNote: '' }];
+  // every clock the pack brings is marked as running, from the moment of awareness
+  const clocks = await p.evaluate(([j, pack]) => window.AUAClocks.clocksFor(j, pack).map(c => c.id), [CASE.jurisdiction, CASE.pack]);
+  expect(clocks.length).toBeGreaterThan(0);
+  const packClocks = clocks.length;
+  d.exercises[0].clocks = Object.fromEntries(clocks.map(id => [id, { runs: 'runs', startedAt: '' }]));
+  const put = await api('ua', 'PUT', '/api/engagement', { revision: cur.body.revision, data: d }, P.mo);
+  expect(put.status, JSON.stringify(put.body)).toBe(200);
+  // the pack is applied at the first render after the state loads; wait for it, or the outputs read the default pack's clocks
+  await p.reload(); await p.waitForFunction(pack => !!(window.AUA && window.AUA.state && window.AUA.state.exercises.length && window.AUA.content().pack === pack), CASE.pack, { timeout: 30_000 });
+  const ve = await p.evaluate(() => window.AUA.output('VE'));
+  expect(ve).toContain('## VE-01 · Exercise · The Saturday Morning Question');
+  expect(ve).toContain(`| ${ent['AIS-001']} |`); expect(ve).toContain(`| ${ent['AIS-002']} |`);
+  if (tr) expect(ve).toContain(`| ${tr.ref} ${tr.trigger} |`);
+  expect(ve).toContain(`| ${I.clock} |`);
+  if (packClocks) expect(ve).toContain(`| Runs | 2026-12-18 16:30 | ${I.ends} |`);
+  expect(ve).toContain('Clocks not yet confirmed by the GC.'); expect(ve).toContain('Not yet settled by counsel.'); expect(ve).toContain('Independent review: not yet reviewed.');
+  // the Findings card shows the event against the arrangements whose AI uses were present
+  await p.evaluate(() => window.AUA.go('findings'));
+  await expect(p.locator('main')).toContainText('VE-01');
+  // the evidence feed carries the three outputs, and Board Direction's index gathers them over the binding
+  const ev2 = await api('ua', 'GET', '/api/evidence');
+  const by = Object.fromEntries(ev2.body.artefacts.map(a => [a.id, a]));
+  expect(by.DL11.status).toBe('draft'); expect(by.DL11.note).toMatch(/entries with readiness gaps/);
+  expect(by.DL12.status).toBe('draft'); expect(by.VE.status).toBe('draft'); expect(by.VE.note).toContain('1 of 1 events not yet reviewed');
+  const r = await api('bd', 'GET', '/api/evidence-from-appetite');
+  const art = id => r.body.artefacts.find(a => a.app === 'UA' && a.id === id) || {};
+  expect(art('DL11').status).toBe('draft'); expect(art('VE').status).toBe('draft');
+  if (process.env.CHAIN_OUT) { writeFileSync(join(process.env.CHAIN_OUT, 'dl11-incident-readiness-record.md'), dl11); writeFileSync(join(process.env.CHAIN_OUT, 'dl12-evidence-preservation-hold.md'), dl12); writeFileSync(join(process.env.CHAIN_OUT, 've-exercise-record.md'), ve); }
   expect(p._errors).toEqual([]);
   await ctx.close();
 });
