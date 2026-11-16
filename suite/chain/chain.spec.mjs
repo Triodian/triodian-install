@@ -16,7 +16,7 @@
 //      lists the clocks for the jurisdiction and the gaps with owners; an exercise (the 13 November scenario, re-set in
 //      the client's chain) is recorded against the register and comes out as the VE record; both reach the evidence
 //      index at Board Direction (AI Incident Accountability, Shape A; development plan A.7). Skipped against a
-//      Use Assessment that predates use-assessment #45, as the pinned release does until releases.json moves.
+//      Use Assessment that predates use-assessment #45 (the pins before 17 Nov 2026).
 // Steps 1 to 7 together are gate G-ART (ready for ART): a super trustee, from an imported register, in Lite scope, to the
 // APRA letter evidence index. Steps 1 to 6 are gate G2.
 // Each step goes through the apps' own pages and APIs. Agreeing and approving are done the way the pages do them
@@ -347,7 +347,7 @@ test('7 · Board Direction: the evidence index gathers the artefacts of all thre
 
 test('8 · Use Assessment: incident readiness from the register, the readiness record DL11, and an exercise recorded as a validation event (AI Incident Accountability, Shape A)', async ({ browser }) => {
   const ev = await api('ua', 'GET', '/api/evidence');
-  test.skip(ev.status !== 200 || !(ev.body.artefacts || []).some(a => a.id === 'DL11'), 'this Use Assessment predates use-assessment #45 (the pinned release until releases.json moves)');
+  test.skip(ev.status !== 200 || !(ev.body.artefacts || []).some(a => a.id === 'DL11'), 'this Use Assessment predates use-assessment #45');
   const I = CASE.incident, { ctx, p } = await open(browser, 'ua', P.mo);
   await p.waitForFunction(pack => !!(window.AUA && window.AUA.state && window.AUA.state.entries.length && window.AUA.content().pack === pack), CASE.pack, { timeout: 30_000 });
   // The nine readiness columns came in with the register (A.2): two entries carry them, the rest are gaps
