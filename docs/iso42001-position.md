@@ -4,7 +4,7 @@
 
 Triodian does not hold an ISO/IEC 42001 certificate. This statement takes each clause of ISO/IEC 42001:2023 and each
 control in its Annex A and says where Triodian stands on it today as the organisation that designs, develops and
-publishes the Triodian app suite, so a client, a practitioner or a contributor can read it against their own review. It
+publishes the Triodian Assessment Suite, so a client, a practitioner or a contributor can read it against their own review. It
 sits beside the [ISO/IEC 27001:2022 Annex A control statement](iso27001-annex-a.md), the
 [security answers](security-answers.md) and the [privacy notice](privacy.md).
 
