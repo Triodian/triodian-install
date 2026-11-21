@@ -8,7 +8,7 @@ and says where Triodian stands on it today, so a client can read it against its 
 
 **Summary.** 24 implemented, 54 partial, 15 not applicable, of 93.
 
-**Scope.** The Triodian app suite as software, and a deployment Triodian administers for a client. In a client-run
+**Scope.** The Triodian Assessment Suite as software, and a deployment Triodian administers for a client. In a client-run
 deployment the client’s own controls apply to its Cloudflare account, its people and its devices.
 
 **How to read it.** *Implemented* means the control is in place and can be shown, usually in the code or its tests.
